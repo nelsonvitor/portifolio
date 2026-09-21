@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Aderência de Produção</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0b0918;
+  --bg-elev:#100d21;
+  --card:#16122b;
+  --card-hover:#1c1736;
+  --border:rgba(255,255,255,0.07);
+  --border-soft:rgba(255,255,255,0.04);
+  --text:#f5f2ff;
+  --text-soft:#b3acd0;
+  --text-mute:#7a7499;
+  --brand:#9b7bff;
+  --brand-soft:rgba(155,123,255,0.14);
+  --brand-2:#e879f9;
+  --green:#8fd94b;
+  --green-soft:rgba(143,217,75,0.14);
+  --blue:#4aa8ff;
+  --blue-soft:rgba(74,168,255,0.14);
+  --orange:#ff9a3d;
+  --orange-soft:rgba(255,154,61,0.14);
+  --purple:#e879f9;
+  --purple-soft:rgba(232,121,249,0.14);
+  --red:#ff5a4f;
+  --cyan:#22d3ee;
+  --cyan-soft:rgba(34,211,238,0.14);
+  --red-soft:rgba(255,90,79,0.14);
+  --font-display:'Sora','Segoe UI',sans-serif;
+  --font-body:'Inter','Segoe UI',Arial,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --radius:16px;
+  --radius-sm:10px;
+  --lo:75%; --hi:90%;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+
+html,body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+body{
+  position:relative;
+  overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(155,123,255,0.16), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,121,249,0.09), transparent);
+}
+
+.bg-orbs{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
+.orb{position:absolute; border-radius:50%; filter:blur(90px); opacity:0.16;}
+.orb-1{width:520px; height:520px; background:var(--brand); top:-180px; left:-120px; animation:float1 22s ease-in-out infinite;}
+.orb-2{width:460px; height:460px; background:var(--brand-2); top:20%; right:-160px; animation:float2 26s ease-in-out infinite;}
+.orb-3{width:380px; height:380px; background:var(--orange); bottom:-140px; left:35%; animation:float1 30s ease-in-out infinite reverse;}
+@keyframes float1{0%,100%{transform:translate(0,0);} 50%{transform:translate(40px,60px);}}
+@keyframes float2{0%,100%{transform:translate(0,0);} 50%{transform:translate(-50px,40px);}}
+
+.wrap{
+  position:relative; z-index:1;
+  max-width:1440px;
+  margin:0 auto;
+  padding:40px 32px 60px;
+}
+
+/* NAVEGAÇÃO ENTRE RELATÓRIOS */
+.nav-tabs{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:20px; animation:fadeUp 0.6s ease both;}
+.nav-pill{
+  padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600;
+  text-decoration:none; color:#b3acd0; background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07); transition:background-color .2s, color .2s, border-color .2s;
+  white-space:nowrap;
+}
+.nav-pill:hover{background:rgba(255,255,255,0.08); color:#f5f2ff;}
+.nav-pill.active{color:#0b0918; background:linear-gradient(135deg,#9b7bff,#e879f9); border-color:transparent;}
+.nav-pill:focus-visible{outline:2px solid var(--brand); outline-offset:2px;}
+
+/* HEADER */
+.hdr{
+  display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:20px;
+  margin-bottom:20px;
+  animation:fadeUp 0.6s ease both;
+}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.14em; font-weight:500;
+  color:var(--brand);
+  margin-bottom:10px;
+}
+.hdr h1{
+  font-family:var(--font-display);
+  font-size:38px; font-weight:700; letter-spacing:-0.02em;
+  line-height:1.1;
+}
+.accent-text{
+  background:linear-gradient(120deg, var(--brand), var(--brand-2) 70%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hdr-sub{
+  color:var(--text-soft); font-size:14.5px; margin-top:8px;
+}
+
+.segctrl{
+  display:flex; gap:4px; background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:4px;
+}
+.seg-btn{
+  font-family:var(--font-body); font-size:13px; font-weight:500;
+  color:var(--text-mute); background:transparent; border:none; border-radius:8px;
+  padding:8px 16px; cursor:pointer; transition:all 0.2s ease;
+}
+.seg-btn:hover{color:var(--text-soft);}
+.seg-btn.active{background:var(--brand-soft); color:var(--brand);}
+.segctrl.mini .seg-btn{font-size:12px; padding:6px 12px;}
+
+.bandbox{
+  display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:8px 14px;
+  font-size:12.5px; color:var(--text-mute);
+}
+.bandbox label{display:flex; align-items:center; gap:7px; white-space:nowrap;}
+.bandbox b{color:var(--text-soft); font-weight:600;}
+.bandbox .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+.bandbox input{
+  width:58px; background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  color:var(--text); font-family:var(--font-mono); font-size:12.5px;
+  padding:6px 8px; border-radius:8px; text-align:right;
+}
+.bandbox input:focus{outline:none; border-color:var(--brand);}
+
+/* FILTER BAR */
+.filter-panel{
+  position:relative; z-index:20;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px 16px;
+  margin-bottom:20px;
+  animation:fadeUp 0.6s ease 0.08s both;
+}
+.filter-bar{display:flex; align-items:center; gap:10px 12px; flex-wrap:wrap;}
+.filter-panel-title{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:0.08em;
+  color:var(--text-mute); text-transform:uppercase;
+  display:flex; align-items:center; gap:8px; margin-right:6px; white-space:nowrap;
+}
+.filter-count{
+  background:var(--brand-soft); color:var(--brand); font-size:10.5px; font-weight:600;
+  padding:2px 8px; border-radius:20px; font-family:var(--font-body); text-transform:none; letter-spacing:0;
+}
+#ddRow{display:contents;}
+.dd{position:relative; --c:var(--brand); --c-soft:var(--brand-soft); --c-b:rgba(155,123,255,0.4);}
+.dd[data-group="familia"]{--c:var(--blue); --c-soft:var(--blue-soft); --c-b:rgba(74,168,255,0.4);}
+.dd[data-group="marca"]{--c:var(--orange); --c-soft:var(--orange-soft); --c-b:rgba(255,154,61,0.4);}
+.dd[data-group="periodo"]{--c:var(--cyan); --c-soft:var(--cyan-soft); --c-b:rgba(34,211,238,0.4);}
+.dd[data-group="situ"]{--c:var(--purple); --c-soft:var(--purple-soft); --c-b:rgba(232,121,249,0.4);}
+.dd-btn{
+  display:flex; align-items:center; gap:8px; height:36px; padding:0 10px 0 12px;
+  font-family:var(--font-body); font-size:12.5px; color:var(--text-soft);
+  background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:9px;
+  cursor:pointer; transition:all 0.18s ease; white-space:nowrap; appearance:none;
+}
+.dd-btn:hover{border-color:rgba(255,255,255,0.2); color:var(--text);}
+.dd-btn:focus-visible{outline:none; border-color:var(--c);}
+.dd-label{font-weight:600; color:var(--text-soft);}
+.dd-value{color:var(--text-mute); max-width:130px; overflow:hidden; text-overflow:ellipsis;}
+.dd-chev{width:14px; height:14px; flex-shrink:0; color:var(--text-mute); transition:transform 0.2s ease;}
+.dd.open .dd-chev{transform:rotate(180deg);}
+.dd-btn.has, .dd.open .dd-btn{background:var(--c-soft); border-color:var(--c-b);}
+.dd-btn.has .dd-label, .dd-btn.has .dd-value{color:var(--c);}
+.dd-panel{
+  position:absolute; top:calc(100% + 6px); left:0; z-index:50;
+  min-width:100%; width:max-content; max-width:min(320px, calc(100vw - 32px)); max-height:320px; overflow-y:auto;
+  background:#1c1736; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px;
+  box-shadow:0 18px 44px rgba(0,0,0,0.55);
+}
+.dd-panel[hidden]{display:none;}
+.dd-opt{
+  display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px;
+  font-size:12.5px; color:var(--text-soft); cursor:pointer; user-select:none;
+}
+.dd-opt:hover{background:rgba(255,255,255,0.05); color:var(--text);}
+.dd-opt input{accent-color:var(--c); width:14px; height:14px; flex-shrink:0; cursor:pointer;}
+.dd-opt.dd-all{border-bottom:1px solid var(--border-soft); border-radius:8px 8px 0 0; margin-bottom:4px; color:var(--text);}
+.dd-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+#searchInput{
+  flex:1 1 200px; min-width:180px; height:36px;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  color:var(--text); font-family:var(--font-body); font-size:12.5px;
+  padding:0 12px; border-radius:9px;
+}
+#searchInput::placeholder{color:var(--text-mute);}
+#searchInput:focus{outline:none; border-color:var(--brand);}
+.filter-reset{
+  font-family:var(--font-body); font-size:12px; color:var(--text-mute); height:36px;
+  background:transparent; border:1px solid var(--border); border-radius:9px;
+  padding:0 12px; cursor:pointer; transition:all 0.2s ease;
+  display:flex; align-items:center; gap:6px; white-space:nowrap;
+}
+.filter-reset:hover{color:var(--text); border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.03);}
+
+.empty-state{
+  display:flex; align-items:center; justify-content:center; height:100%;
+  color:var(--text-mute); font-size:12.5px; text-align:center; padding:20px; line-height:1.6;
+}
+
+/* NOTICE */
+.notice{
+  display:flex; gap:10px; align-items:flex-start;
+  background:var(--card); border:1px solid var(--border-soft);
+  border-left:2px solid var(--orange);
+  border-radius:var(--radius-sm);
+  padding:13px 16px; margin-bottom:28px;
+  font-size:12.5px; color:var(--text-soft); line-height:1.6;
+  animation:fadeUp 0.6s ease 0.05s both;
+}
+.notice[hidden]{display:none;}
+#loadStatus{flex-wrap:wrap; align-items:center;}
+#loadStatus span{flex:1 1 320px;}
+.notice .filter-reset{flex-shrink:0; height:32px;}
+.notice svg{flex-shrink:0; color:var(--orange); margin-top:2px;}
+.notice code{
+  font-family:var(--font-mono); font-size:11.5px; background:rgba(255,255,255,0.06);
+  padding:1px 6px; border-radius:4px; color:var(--text);
+}
+.notice b{color:var(--text);}
+
+/* KPI GRID */
+.kpi-grid{
+  display:grid; grid-template-columns:repeat(5,1fr); gap:16px;
+  margin-bottom:28px;
+}
+.kpi-card{
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px 20px 18px;
+  position:relative; overflow:hidden;
+  transition:transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  animation:fadeUp 0.6s ease both;
+}
+.kpi-card:hover{transform:translateY(-3px); border-color:rgba(255,255,255,0.14); background:var(--card-hover);}
+.kpi-label{
+  font-size:12px; color:var(--text-mute); font-weight:500;
+  text-transform:uppercase; letter-spacing:0.05em;
+  display:flex; align-items:center; gap:6px; margin-bottom:10px;
+}
+.kpi-icon{width:15px; height:15px; flex-shrink:0;}
+.kpi-value{
+  font-family:var(--font-display); font-size:25px; font-weight:700;
+  letter-spacing:-0.01em; margin-bottom:14px; line-height:1.15;
+}
+.kpi-chips{display:flex; flex-direction:column; gap:6px; margin-top:10px; padding-top:12px; border-top:1px solid var(--border-soft);}
+.kpi-chip{display:flex; justify-content:space-between; align-items:center; font-size:11px;}
+.kpi-chip-label{display:flex; align-items:center; gap:6px; color:var(--text-mute);}
+.kpi-chip-dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;}
+.kpi-chip-val{font-family:var(--font-mono); color:var(--text-soft); font-weight:500;}
+.kpi-fill-track{position:absolute; bottom:0; left:0; right:0; height:3px; background:rgba(255,255,255,0.04);}
+.kpi-fill{height:100%; border-radius:0 3px 3px 0; transition:width 0.8s cubic-bezier(.16,1,.3,1);}
+
+/* CHART GRIDS */
+.chart-grid{display:grid; gap:16px; margin-bottom:16px;}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:1.15fr 1fr;}
+.grid-1{grid-template-columns:1fr;}
+
+.card{
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius);
+  animation:fadeUp 0.6s ease both;
+}
+.chart-card{padding:22px 22px 18px; min-width:0;}
+.chart-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap;}
+.chart-head h3{font-family:var(--font-display); font-size:15.5px; font-weight:600; letter-spacing:-0.01em;}
+.chart-tag{
+  font-family:var(--font-mono); font-size:10px; color:var(--text-mute);
+  background:rgba(255,255,255,0.05); padding:3px 9px; border-radius:20px;
+  text-transform:uppercase; letter-spacing:0.05em;
+}
+.chart-box{position:relative; height:230px;}
+.chart-box.tall{height:430px;}
+.chart-box.wide{height:260px;}
+.insight{
+  margin-top:14px; padding-top:12px; border-top:1px solid var(--border-soft);
+  font-size:12.5px; color:var(--text-mute); line-height:1.55;
+}
+.insight b{color:var(--text-soft); font-weight:600;}
+
+/* TABLE */
+.table-card{padding:22px 22px 20px; margin-bottom:24px;}
+.table-wrap{overflow:auto; max-height:640px; border-radius:var(--radius-sm); border:1px solid var(--border-soft);}
+table{width:100%; border-collapse:collapse; font-size:13px; min-width:980px;}
+thead th{
+  text-align:left; padding:12px 12px; background:#1b1633;
+  color:var(--text-mute); font-weight:500; font-size:11px;
+  text-transform:uppercase; letter-spacing:0.03em;
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:2; white-space:nowrap;
+}
+thead th button{
+  all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+}
+thead th button:hover{color:var(--text-soft);}
+thead th button:focus-visible{outline:2px solid var(--brand); outline-offset:3px; border-radius:3px;}
+.arr{font-size:9px; min-width:9px; color:var(--brand);}
+thead th:not(:first-child), tbody td:not(:first-child), tfoot td:not(:first-child){text-align:right; font-family:var(--font-mono);}
+thead th:not(:first-child) button{justify-content:flex-end;}
+thead th.txt, tbody td.txt, tfoot td.txt{text-align:left; font-family:var(--font-body);}
+thead th.txt button{justify-content:flex-start;}
+tbody td{padding:11px 12px; border-bottom:1px solid var(--border-soft); color:var(--text-soft); vertical-align:middle;}
+tbody td:first-child{color:var(--text); font-family:var(--font-body); font-weight:500; min-width:220px;}
+tbody td.txt{white-space:nowrap;}
+.psub{font-size:11px; color:var(--text-mute); font-weight:400; margin-top:2px;}
+tbody tr:hover{background:rgba(255,255,255,0.025);}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr.is-sem td{color:var(--text-mute);}
+tbody tr.is-sem td:first-child{color:var(--text-soft);}
+tfoot td{
+  padding:12px 12px; font-weight:700; color:var(--text);
+  background:#1b1633; border-top:1px solid var(--border);
+  font-family:var(--font-mono); position:sticky; bottom:0; z-index:2;
+}
+tfoot td:first-child{font-family:var(--font-display); font-weight:600;}
+.adcell{display:flex; align-items:center; justify-content:flex-end; gap:12px;}
+.adcell .pct{min-width:50px; text-align:right; color:var(--text); font-weight:500;}
+.mbar{position:relative; width:84px; height:6px; border-radius:3px; background:rgba(255,255,255,0.07); overflow:hidden;}
+.mbar .fill{position:absolute; left:0; top:0; bottom:0; border-radius:3px;}
+.mbar::before,.mbar::after{content:""; position:absolute; top:0; bottom:0; width:2px; background:var(--card); z-index:1;}
+.mbar::before{left:var(--lo);} .mbar::after{left:var(--hi);}
+.tag-sem{font-family:var(--font-mono); font-size:10px; color:var(--text-mute); background:rgba(255,255,255,0.05); padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:0.05em;}
+.table-note{margin-top:12px; font-size:11.5px; color:var(--text-mute); font-style:italic;}
+.count-line{font-size:11.5px; color:var(--text-mute); margin-bottom:10px; font-family:var(--font-mono);}
+
+/* FOOTER */
+.ftr{
+  text-align:center; padding-top:20px; margin-top:12px;
+  color:var(--text-mute); font-size:11.5px; font-family:var(--font-mono);
+}
+
+@keyframes fadeUp{
+  from{opacity:0; transform:translateY(14px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+@media (max-width:1200px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr);}
+  .grid-3{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:860px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .grid-3, .grid-2{grid-template-columns:1fr;}
+  .hdr{flex-direction:column; align-items:flex-start;}
+  .hdr h1{font-size:28px;}
+  .chart-box.tall{height:400px;}
+}
+@media (max-width:520px){
+  .kpi-grid{grid-template-columns:1fr;}
+  .wrap{padding:24px 16px 40px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div class="wrap">
+
+  <nav class="nav-tabs" aria-label="Relatórios">
+    <a href="index.html" class="nav-pill">CURVA ABC - INSUMOS</a>
+    <a href="kanban.html" class="nav-pill">KANBAN DE ESTOQUE</a>
+    <a href="aderencia.html" class="nav-pill active" aria-current="page">ADERÊNCIA DE PRODUÇÃO</a>
+  </nav>
+
+  <header class="hdr">
+    <div class="hdr-left">
+      <div class="eyebrow">ORLA BEBIDAS &middot; CONTROLE DE PRODU&Ccedil;&Atilde;O</div>
+      <h1>Ader&ecirc;ncia de <span class="accent-text">Produ&ccedil;&atilde;o</span></h1>
+      <p class="hdr-sub" id="sub">carregando...</p>
+    </div>
+    <div class="hdr-right">
+      <div class="bandbox" role="group" aria-label="Faixas de aderência">
+        <label><span class="dot" style="background:var(--green)"></span><b>Verde</b> a partir de <input id="th-high" type="number" min="1" max="100" step="1" inputmode="numeric" aria-label="Verde a partir de (%)"> %</label>
+        <label><span class="dot" style="background:var(--red)"></span><b>Vermelho</b> abaixo de <input id="th-low" type="number" min="0" max="99" step="1" inputmode="numeric" aria-label="Vermelho abaixo de (%)"> %</label>
+      </div>
+    </div>
+  </header>
+
+  <div class="notice" id="loadStatus" hidden style="margin-bottom:12px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span id="loadStatusText"></span>
+    <button type="button" class="filter-reset" id="pickBtn">Selecionar base_aderencia.xlsx</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xlsm,.xls" hidden>
+  </div>
+
+  <div class="notice">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="noticeText"></span>
+  </div>
+
+  <!-- FILTER PANEL -->
+  <section class="filter-panel" aria-label="Filtros">
+    <div class="filter-bar">
+      <div class="filter-panel-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filtros
+        <span class="filter-count" id="filterCount">nenhum filtro ativo</span>
+      </div>
+      <div id="ddRow"></div>
+      <input id="searchInput" type="search" placeholder="Buscar produto&hellip;" autocomplete="off" aria-label="Buscar produto">
+      <button class="filter-reset" id="filterResetBtn" type="button">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Limpar filtros
+      </button>
+    </div>
+  </section>
+
+  <!-- KPI CARDS -->
+  <section class="kpi-grid" id="kpiGrid" aria-label="Indicadores do recorte atual"></section>
+
+  <!-- CHARTS ROW 1 -->
+  <section class="chart-grid grid-3">
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Situa&ccedil;&atilde;o dos Itens</h3>
+        <span class="chart-tag">faixas</span>
+      </div>
+      <div class="chart-box" id="chartSituBox"></div>
+      <p class="insight" id="insightSitu"></p>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Ader&ecirc;ncia por Local</h3>
+        <span class="chart-tag">produ&ccedil;&atilde;o</span>
+      </div>
+      <div class="chart-box" id="chartLocalBox"></div>
+      <p class="insight" id="insightLocal"></p>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Ader&ecirc;ncia por Fam&iacute;lia</h3>
+        <span class="chart-tag">produto</span>
+      </div>
+      <div class="chart-box" id="chartFamBox"></div>
+      <p class="insight" id="insightFam"></p>
+    </div>
+  </section>
+
+  <!-- CHARTS ROW 2 -->
+  <section class="chart-grid grid-2">
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Top 10 &middot; Maior Lacuna de Produ&ccedil;&atilde;o</h3>
+        <span class="chart-tag">ranking</span>
+      </div>
+      <div class="chart-box tall" id="chartTopBox"></div>
+      <p class="insight" id="insightTop"></p>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Distribui&ccedil;&atilde;o por Faixa de Ader&ecirc;ncia</h3>
+        <span class="chart-tag">itens</span>
+      </div>
+      <div class="chart-box tall" id="chartDistBox"></div>
+      <p class="insight" id="insightDist"></p>
+    </div>
+  </section>
+
+  <!-- CHARTS ROW 3 -->
+  <section class="chart-grid grid-1">
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Necessidade &times; Produ&ccedil;&atilde;o Real</h3>
+        <div class="segctrl mini" id="groupCtrl" role="group" aria-label="Agrupar por">
+          <button class="seg-btn active" type="button" data-group="local">Local</button>
+          <button class="seg-btn" type="button" data-group="familia">Fam&iacute;lia</button>
+          <button class="seg-btn" type="button" data-group="marca">Marca</button>
+        </div>
+      </div>
+      <div class="chart-box wide" id="chartGrupoBox"></div>
+      <p class="insight" id="insightGrupo"></p>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="card table-card">
+    <div class="chart-head">
+      <h3>Detalhamento por Item</h3>
+      <span class="chart-tag">necessidade &middot; produ&ccedil;&atilde;o real &middot; ader&ecirc;ncia</span>
+    </div>
+    <div class="count-line" id="countLine" aria-live="polite"></div>
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table>
+    </div>
+    <p class="table-note">Totais e ader&ecirc;ncia consideram apenas itens com necessidade positiva. &ldquo;Falta produzir&rdquo; = necessidade menos produ&ccedil;&atilde;o real. Valores respeitam os filtros ativos.</p>
+  </section>
+
+  <footer class="ftr">
+    <span id="ftrText"></span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+const EMBEDDED = [{"local": "OESTE", "familia": "AGUA", "marca": "CRISTALINA", "produto": "AGUA CRISTALINA S/ GAS 12X500ML IND - OESTE", "est": 51811, "cota": 48375, "nec": -3436, "real": -2315.18, "ad": 0.673801, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "OESTE", "familia": "AGUA", "marca": "CRISTALINA", "produto": "AGUA CRISTALINA C/ GAS 12X500ML IND - OESTE", "est": 8060, "cota": 51062, "nec": 43002, "real": 26386.07, "ad": 0.613601, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "OESTE", "familia": "AGUA", "marca": "CRISTALINA", "produto": "AGUA CRISTALINA S/ GAS 6X1,5LT IND - OESTE", "est": 1756, "cota": 3870, "nec": 2114, "real": 1680.4, "ad": 0.794893, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "OESTE", "familia": "AGUA", "marca": "CRISTALINA", "produto": "AGUA CRISTALINA C/ GAS 6X1,5LT IND - OESTE", "est": 2156, "cota": 1935, "nec": -221, "real": -136.45, "ad": 0.617411, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "OESTE", "familia": "AGUA", "marca": "CRISTALINA", "produto": "AGUA CRISTALINA S/ GAS 48X200ML IND - OESTE", "est": 856, "cota": 903, "nec": 47, "real": 31.58, "ad": 0.671929, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "OESTE", "familia": "AGUA", "marca": "CRISTALINA", "produto": "AGUA CRISTALINA S/ GAS 12X330ML IND - OESTE", "est": 1050, "cota": 350, "nec": -700, "real": -467.04, "ad": 0.667198, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "OESTE", "familia": "AGUA", "marca": "CRISTALINA", "produto": "AGUA CRISTALINA C/ GAS 12X330ML IND - OESTE", "est": 167, "cota": 1612, "nec": 1445, "real": 1139.49, "ad": 0.788577, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 6X2LT IND - NORTE", "est": 5513, "cota": 21139, "nec": 15626, "real": 11382.24, "ad": 0.728417, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MACA VERDE E MELAO 6X2LT IND - NORTE", "est": 674, "cota": 3207, "nec": 2533, "real": 2499.04, "ad": 0.986592, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TROPICAL 6X2LT IND - NORTE", "est": 231, "cota": 3689, "nec": 3458, "real": 2909.72, "ad": 0.841446, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MELANCIA E MORANGO 6X2LT IND - NORTE", "est": 843, "cota": 7436, "nec": 6593, "real": 5387.84, "ad": 0.817206, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA UVA VERDE E PESSEGO 6X2LT IND - NORTE", "est": 875, "cota": 3633, "nec": 2758, "real": 2415.11, "ad": 0.875676, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LIMAO 6X2LT", "est": 756, "cota": 6218, "nec": 5462, "real": 3734.77, "ad": 0.683773, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 6X2LT", "est": 928, "cota": 15193, "nec": 14265, "real": 11576.32, "ad": 0.811519, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA S/ ACUCARES 6X2LT", "est": 2866, "cota": 2356, "nec": -510, "real": -467.65, "ad": 0.916969, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA S/ ACUCARES 6X2LT", "est": 2558, "cota": 1484, "nec": -1074, "real": -1060.81, "ad": 0.987715, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 6X2LT", "est": 255, "cota": 8817, "nec": 8562, "real": 6924.99, "ad": 0.808805, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ FRAMBOESA 6X2LT", "est": 2748, "cota": 2376, "nec": -372, "real": -313.16, "ad": 0.841832, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 6X2LT", "est": 4496, "cota": 11973, "nec": 7477, "real": 6530.14, "ad": 0.873364, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 6X2LT", "est": 4299, "cota": 11426, "nec": 7127, "real": 6168.77, "ad": 0.865549, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 6X2LT", "est": 885, "cota": 4673, "nec": 3788, "real": 2793.72, "ad": 0.737519, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "JABUTI", "produto": "JABUTI GUARANA 6X2LT", "est": 6113, "cota": 9692, "nec": 3579, "real": 2958.48, "ad": 0.826623, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "JABUTI", "produto": "JABUTI LARANJA 6X2LT", "est": 1995, "cota": 2195, "nec": 200, "real": 126.86, "ad": 0.634324, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "DOCEIRA", "produto": "DOCEIRA TUBAINA 6X2LT", "est": 400, "cota": 2128, "nec": 1728, "real": 1457.59, "ad": 0.843513, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "DOCEIRA", "produto": "DOCEIRA LARANJA 6X2LT", "est": 414, "cota": 1084, "nec": 670, "real": 627.68, "ad": 0.936839, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "GAZELA", "produto": "GAZELA GUARANA 6X2LT", "est": 243, "cota": 5065, "nec": 4822, "real": 3855.87, "ad": 0.799641, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "GAZELA", "produto": "GAZELA LARANJA 6X2LT", "est": 501, "cota": 2215, "nec": 1714, "real": 1360.25, "ad": 0.793612, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "TROVÃO", "produto": "TROVAO ENERGY DRINK 6X2LT IND - NORTE", "est": 364, "cota": 1806, "nec": 1442, "real": 1388.02, "ad": 0.962565, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LIMAO 12X200ML", "est": 1379, "cota": 2007, "nec": 628, "real": 487.41, "ad": 0.776138, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 12X200ML", "est": 755, "cota": 1325, "nec": 570, "real": 408.98, "ad": 0.717509, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X200ML", "est": 1732, "cota": 2291, "nec": 559, "real": 434.89, "ad": 0.777981, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 12X200ML", "est": 1665, "cota": 1769, "nec": 104, "real": 82.64, "ad": 0.794578, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 12X200ML", "est": 1604, "cota": 1929, "nec": 325, "real": 281.6, "ad": 0.866453, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 12X200ML", "est": 884, "cota": 1431, "nec": 547, "real": 540.54, "ad": 0.988192, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LIMAO 12X200ML IND - NORTE", "est": 0, "cota": 88, "nec": 88, "real": 83.55, "ad": 0.949428, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 12X200ML IND - NORTE", "est": 0, "cota": 165, "nec": 165, "real": 119.66, "ad": 0.725198, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X200ML IND - NORTE", "est": 0, "cota": 257, "nec": 257, "real": 223.3, "ad": 0.868881, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 12X200ML IND - NORTE", "est": 0, "cota": 359, "nec": 359, "real": 285.35, "ad": 0.794839, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 12X200ML IND - NORTE", "est": 0, "cota": 98, "nec": 98, "real": 60.06, "ad": 0.612907, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 12X200ML IND - NORTE", "est": 0, "cota": 612, "nec": 612, "real": 497.02, "ad": 0.81213, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 12X250ML IND - NORTE", "est": 10927, "cota": 38743, "nec": 27816, "real": 23129.37, "ad": 0.831513, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MELANCIA E MORANGO 12X250ML IND - NORTE", "est": 1976, "cota": 4240, "nec": 2264, "real": 1739.25, "ad": 0.76822, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA ACAI 12X250ML IND - NORTE", "est": 258, "cota": 2283, "nec": 2025, "real": 1272.18, "ad": 0.628237, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA UVA VERDE E PESSEGO 12X250ML IND - NORTE", "est": 1968, "cota": 1928, "nec": -40, "real": -38.88, "ad": 0.971941, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MACA VERDE E MELAO 12X250ML IND - NORTE", "est": 1231, "cota": 3986, "nec": 2755, "real": 2684.01, "ad": 0.974232, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TROPICAL 12X250ML IND - NORTE", "est": 1648, "cota": 2616, "nec": 968, "real": 641.07, "ad": 0.662261, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA CITRUS 12X250ML IND - NORTE", "est": 306, "cota": 1319, "nec": 1013, "real": 686.75, "ad": 0.677937, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "ENERGETICO", "marca": "ILHAMAR", "produto": "AT ILHAMAR 12X250ML IND - NORTE", "est": 1198, "cota": 2580, "nec": 1382, "real": 1210.22, "ad": 0.875703, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "DESTILADO", "marca": "BARRICA", "produto": "CAC BARRICA 12X450ML IND - NORTE", "est": 5716, "cota": 3736, "nec": -1980, "real": -1194.22, "ad": 0.60314, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "COQUETEL", "marca": "ALBA", "produto": "COQ ALBA ICE LIMAO 12X270ML IND - NORTE", "est": 2042, "cota": 4778, "nec": 2736, "real": 2681.71, "ad": 0.980158, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "COQUETEL", "marca": "ALBA", "produto": "COQ ALBA ICE MARACUJA 12X270ML IND - NORTE", "est": 1996, "cota": 3915, "nec": 1919, "real": 1869.99, "ad": 0.974461, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "COQUETEL", "marca": "ALBA", "produto": "COQ ALBA ICE MELANCIA E MORANGO 12X270ML IND - NORTE", "est": 1871, "cota": 4105, "nec": 2234, "real": 2156.96, "ad": 0.965515, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 12X500ML", "est": 244, "cota": 592, "nec": 348, "real": 311.77, "ad": 0.895893, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X500ML", "est": 768, "cota": 1381, "nec": 613, "real": 582.84, "ad": 0.950793, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 12X500ML", "est": 1098, "cota": 1533, "nec": 435, "real": 367.77, "ad": 0.845442, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 12X500ML", "est": 516, "cota": 673, "nec": 157, "real": 114.06, "ad": 0.726483, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 12X500ML IND - NORTE", "est": 1526, "cota": 1867, "nec": 341, "real": 220.14, "ad": 0.645586, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X500ML IND - NORTE", "est": 1234, "cota": 1814, "nec": 580, "real": 458.26, "ad": 0.790108, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 12X500ML IND - NORTE", "est": 1877, "cota": 2059, "nec": 182, "real": 144.39, "ad": 0.793373, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "NORTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 12X500ML IND - NORTE", "est": 1429, "cota": 2049, "nec": 620, "real": 392.04, "ad": 0.632326, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 12X200ML", "est": 1801, "cota": 2202, "nec": 401, "real": 389.71, "ad": 0.971854, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 12X200ML", "est": 1329, "cota": 1506, "nec": 177, "real": 173.88, "ad": 0.982372, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA S/ ACUCARES 12X200ML", "est": 491, "cota": 764, "nec": 273, "real": 264.57, "ad": 0.969111, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 12X200ML", "est": 2047, "cota": 2446, "nec": 399, "real": 357.63, "ad": 0.896312, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LIMAO 12X200ML", "est": 1539, "cota": 1890, "nec": 351, "real": 213.68, "ad": 0.60877, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X200ML", "est": 2274, "cota": 2429, "nec": 155, "real": 121.2, "ad": 0.781933, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 12X200ML", "est": 2026, "cota": 2118, "nec": 92, "real": 82.66, "ad": 0.898431, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 12X200ML IND - NORTE", "est": 2328, "cota": 2539, "nec": 211, "real": 130.83, "ad": 0.620065, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 12X200ML IND - NORTE", "est": 1476, "cota": 1630, "nec": 154, "real": 108.01, "ad": 0.701392, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA S/ ACUCARES 12X200ML IND - NORTE", "est": 2258, "cota": 2885, "nec": 627, "real": 470.78, "ad": 0.750843, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 12X200ML IND - NORTE", "est": 546, "cota": 1006, "nec": 460, "real": 416.1, "ad": 0.904565, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LIMAO 12X200ML IND - NORTE", "est": 572, "cota": 943, "nec": 371, "real": 307.12, "ad": 0.827809, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X200ML IND - NORTE", "est": 2205, "cota": 2650, "nec": 445, "real": 338.01, "ad": 0.759571, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 12X200ML IND - NORTE", "est": 1849, "cota": 2440, "nec": 591, "real": 560.65, "ad": 0.948644, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 6X2LT", "est": 1862, "cota": 2320, "nec": 458, "real": 354.93, "ad": 0.774967, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA S/ ACUCARES 6X2LT", "est": 1157, "cota": 1596, "nec": 439, "real": 397.07, "ad": 0.90448, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 6X2LT", "est": 284, "cota": 351, "nec": 67, "real": 56.9, "ad": 0.849276, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ FRAMBOESA 6X2LT", "est": 1965, "cota": 2221, "nec": 256, "real": 189.56, "ad": 0.740483, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 6X2LT", "est": 271, "cota": 535, "nec": 264, "real": 235.02, "ad": 0.890209, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "JABUTI", "produto": "JABUTI GUARANA 6X2LT", "est": 526, "cota": 812, "nec": 286, "real": 248.62, "ad": 0.869285, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "DOCEIRA", "produto": "DOCEIRA TUBAINA 6X2LT", "est": 1188, "cota": 1757, "nec": 569, "real": 468.05, "ad": 0.822585, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE PET", "familia": "REFRIGERANTE", "marca": "GAZELA", "produto": "GAZELA GUARANA 6X2LT", "est": 285, "cota": 408, "nec": 123, "real": 95.84, "ad": 0.77917, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE LATA", "familia": "CERVEJA", "marca": "SERRANA", "produto": "CER SERRANA 12X350ML", "est": 1694, "cota": 1866, "nec": 172, "real": 119.14, "ad": 0.692647, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X269ML", "est": 1956, "cota": 2143, "nec": 187, "real": 125.58, "ad": 0.671525, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X350ML", "est": 1274, "cota": 1677, "nec": 403, "real": 280.62, "ad": 0.696325, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X473ML", "est": 543, "cota": 1073, "nec": 530, "real": 468.85, "ad": 0.884614, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA URUGUAI 12X473ML EXP", "est": 852, "cota": 1356, "nec": 504, "real": 493.45, "ad": 0.979064, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "LESTE LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA PILSEN ARGENTINA 12X473ML EXP", "est": 2215, "cota": 2395, "nec": 180, "real": 160.84, "ad": 0.893561, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 4X3LT", "est": 1263, "cota": 1664, "nec": 401, "real": 328.5, "ad": 0.819198, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 6X2LT", "est": 1154, "cota": 1517, "nec": 363, "real": 293.78, "ad": 0.809298, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 4X3LT", "est": 1976, "cota": 2432, "nec": 456, "real": 397.81, "ad": 0.872381, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 6X2LT", "est": 1616, "cota": 1953, "nec": 337, "real": 267.06, "ad": 0.79247, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 6X2LT", "est": 1006, "cota": 1605, "nec": 599, "real": 529.9, "ad": 0.884642, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LIMAO 6X2LT", "est": 769, "cota": 1186, "nec": 417, "real": 357.93, "ad": 0.858337, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA S/ ACUCARES 6X2LT", "est": 399, "cota": 654, "nec": 255, "real": 250.26, "ad": 0.981393, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA S/ ACUCARES 6X2LT", "est": 1177, "cota": 1601, "nec": 424, "real": 378.96, "ad": 0.893781, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "JABUTI", "produto": "JABUTI GUARANA 6X2LT", "est": 1894, "cota": 1988, "nec": 94, "real": 64.27, "ad": 0.683686, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 4X3LT", "est": 2026, "cota": 2112, "nec": 86, "real": 55.7, "ad": 0.647702, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 6X2LT", "est": 1559, "cota": 2124, "nec": 565, "real": 458.35, "ad": 0.811231, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 6X2LT", "est": 1851, "cota": 2273, "nec": 422, "real": 332.19, "ad": 0.787172, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "JABUTI", "produto": "JABUTI LARANJA 6X2LT", "est": 307, "cota": 590, "nec": 283, "real": 211.58, "ad": 0.74764, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MELANCIA E MORANGO 6X2LT", "est": 748, "cota": 932, "nec": 184, "real": 153.34, "ad": 0.833388, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MACA VERDE E MELAO 6X2LT", "est": 2265, "cota": 2631, "nec": 366, "real": 240.48, "ad": 0.657049, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 6X2LT", "est": 1928, "cota": 2315, "nec": 387, "real": 249.93, "ad": 0.645822, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TROPICAL 6X2LT", "est": 1197, "cota": 1538, "nec": 341, "real": 214.74, "ad": 0.629745, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 6X1LT", "est": 1594, "cota": 1709, "nec": 115, "real": 98.22, "ad": 0.854068, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA UVA VERDE E PESSEGO 6X2LT", "est": 2269, "cota": 2375, "nec": 106, "real": 79.42, "ad": 0.749229, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 6X2,5LT", "est": 1567, "cota": 1770, "nec": 203, "real": 176.03, "ad": 0.867137, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 6X2,5LT", "est": 2273, "cota": 2823, "nec": 550, "real": 417.99, "ad": 0.759988, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 6X2,5LT", "est": 638, "cota": 752, "nec": 114, "real": 94.76, "ad": 0.831222, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "DOCEIRA", "produto": "DOCEIRA LARANJA 6X2LT", "est": 1993, "cota": 2145, "nec": 152, "real": 93.16, "ad": 0.612922, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL PET", "familia": "REFRIGERANTE", "marca": "DOCEIRA", "produto": "DOCEIRA TUBAINA 6X2LT", "est": 1410, "cota": 1830, "nec": 420, "real": 271.76, "ad": 0.647055, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 6X350ML", "est": 971, "cota": 1501, "nec": 530, "real": 325.53, "ad": 0.614216, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 6X350ML", "est": 634, "cota": 817, "nec": 183, "real": 141.87, "ad": 0.775247, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 6X350ML", "est": 1839, "cota": 2399, "nec": 560, "real": 521.2, "ad": 0.930711, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 6X350ML", "est": 1007, "cota": 1336, "nec": 329, "real": 309.72, "ad": 0.941395, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 6X350ML", "est": 1832, "cota": 2207, "nec": 375, "real": 280.64, "ad": 0.748374, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MACA VERDE E MELAO 6X473ML", "est": 1557, "cota": 2104, "nec": 547, "real": 493.27, "ad": 0.90177, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 6X473ML", "est": 649, "cota": 1148, "nec": 499, "real": 305.76, "ad": 0.612743, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TROPICAL 6X473ML", "est": 1211, "cota": 1485, "nec": 274, "real": 173.84, "ad": 0.634447, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TROPICAL 6X473ML EXP", "est": 1112, "cota": 1207, "nec": 95, "real": 57.81, "ad": 0.608539, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL ZERO 6X473ML", "est": 1115, "cota": 1617, "nec": 502, "real": 403.83, "ad": 0.804448, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MELANCIA E MORANGO ZERO 6X473ML", "est": 737, "cota": 888, "nec": 151, "real": 147.27, "ad": 0.975317, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 6X269ML", "est": 576, "cota": 1006, "nec": 430, "real": 382.99, "ad": 0.890666, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL ZERO 6X269ML", "est": 614, "cota": 774, "nec": 160, "real": 103.07, "ad": 0.644174, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MELANCIA E MORANGO 6X269ML", "est": 1634, "cota": 1917, "nec": 283, "real": 190.15, "ad": 0.671905, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MELANCIA E MORANGO ZERO 6X269ML", "est": 1580, "cota": 2055, "nec": 475, "real": 366.27, "ad": 0.771085, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MACA VERDE E MELAO 6X269ML", "est": 1613, "cota": 2068, "nec": 455, "real": 304.02, "ad": 0.668175, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA UVA VERDE E PESSEGO 6X269ML", "est": 1283, "cota": 1429, "nec": 146, "real": 133.09, "ad": 0.911563, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA UVA VERDE E PESSEGO 6X473ML", "est": 2267, "cota": 2406, "nec": 139, "real": 134.54, "ad": 0.967891, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TANGERINA E LIMAO ZERO 6X473ML", "est": 2049, "cota": 2301, "nec": 252, "real": 168.59, "ad": 0.669022, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA LARANJA ULTRA CITRUS ZERO 6X473ML", "est": 2078, "cota": 2254, "nec": 176, "real": 135.8, "ad": 0.771611, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "COQUETEL", "marca": "PRADARIA", "produto": "COQ PRADARIA PESSEGO 6X350ML", "est": 364, "cota": 715, "nec": 351, "real": 289.18, "ad": 0.823868, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CHOPP VINHO", "marca": "VILLA ROSA", "produto": "CV VILLA ROSA 6X265ML", "est": 363, "cota": 599, "nec": 236, "real": 224.45, "ad": 0.951057, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CHOPP VINHO", "marca": "VILLA ROSA", "produto": "CV VILLA ROSA 6X473ML", "est": 1045, "cota": 1186, "nec": 141, "real": 108.46, "ad": 0.769194, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "SERRANA", "produto": "CER SERRANA 12X269ML - INTER PORTO", "est": 624, "cota": 1092, "nec": 468, "real": 422.93, "ad": 0.903697, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "SERRANA", "produto": "CER SERRANA 12X269ML", "est": 378, "cota": 848, "nec": 470, "real": 451.31, "ad": 0.960227, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "SERRANA", "produto": "CER SERRANA 12X350ML", "est": 981, "cota": 1322, "nec": 341, "real": 260.21, "ad": 0.763078, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "SERRANA", "produto": "CER SERRANA 12X473ML", "est": 1445, "cota": 1995, "nec": 550, "real": 467.54, "ad": 0.850071, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X269ML", "est": 252, "cota": 615, "nec": 363, "real": 236.92, "ad": 0.652673, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X350ML", "est": 267, "cota": 503, "nec": 236, "real": 179.24, "ad": 0.759497, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X473ML", "est": 2082, "cota": 2568, "nec": 486, "real": 414.28, "ad": 0.852434, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "DON MARINO", "produto": "CER DON MARINO 12X269ML", "est": 1419, "cota": 1950, "nec": 531, "real": 430.82, "ad": 0.811331, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "DON MARINO", "produto": "CER DON MARINO 12X350ML", "est": 340, "cota": 922, "nec": 582, "real": 393.19, "ad": 0.675584, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ COLA 6X350ML EXP", "est": 983, "cota": 1564, "nec": 581, "real": 565.57, "ad": 0.973439, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 6X350ML EXP", "est": 923, "cota": 1183, "nec": 260, "real": 172.86, "ad": 0.664834, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 6X350ML EXP", "est": 789, "cota": 1043, "nec": 254, "real": 237.53, "ad": 0.935177, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 6X350ML EXP", "est": 1975, "cota": 2488, "nec": 513, "real": 465.74, "ad": 0.907868, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ UVA 6X350ML EXP", "est": 1861, "cota": 2510, "nec": 649, "real": 476.51, "ad": 0.734222, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 6X473ML EXP", "est": 1618, "cota": 1907, "nec": 289, "real": 185.54, "ad": 0.642006, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MACA VERDE E MELAO 6X473ML EXP", "est": 1471, "cota": 1732, "nec": 261, "real": 189.73, "ad": 0.726938, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL ZERO 6X473ML EXP", "est": 1773, "cota": 2105, "nec": 332, "real": 213.47, "ad": 0.642988, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA MELANCIA E MORANGO ZERO 6X473ML EXP", "est": 1142, "cota": 1257, "nec": 115, "real": 99.76, "ad": 0.867517, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TRADICIONAL 6X269ML EXP", "est": 2149, "cota": 2551, "nec": 402, "real": 254.1, "ad": 0.632099, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CHOPP VINHO", "marca": "VILLA ROSA", "produto": "CV VILLA ROSA 6X265ML EXP", "est": 1045, "cota": 1520, "nec": 475, "real": 420.77, "ad": 0.885839, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CHOPP VINHO", "marca": "VILLA ROSA", "produto": "CV VILLA ROSA 6X473ML EXP", "est": 1366, "cota": 1932, "nec": 566, "real": 495.83, "ad": 0.87602, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X473ML EXP", "est": 1260, "cota": 1435, "nec": 175, "real": 127.45, "ad": 0.728261, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X269ML EXP", "est": 580, "cota": 1030, "nec": 450, "real": 322.14, "ad": 0.715876, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 12X350ML EXP", "est": 1943, "cota": 2336, "nec": 393, "real": 251.09, "ad": 0.638917, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL LATA", "familia": "ENERGETICO", "marca": "VOLTA", "produto": "VOLTA TROPICAL 6X269ML", "est": 1305, "cota": 1616, "nec": 311, "real": 305.41, "ad": 0.982018, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ GUARANA 24X600ML - RET", "est": 2048, "cota": 2128, "nec": 80, "real": 72.28, "ad": 0.903537, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LARANJA 24X600ML - RET", "est": 1137, "cota": 1754, "nec": 617, "real": 459.23, "ad": 0.744299, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ LIMAO 24X600ML - RET", "est": 1635, "cota": 2121, "nec": 486, "real": 313.9, "ad": 0.64588, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X300ML", "est": 241, "cota": 779, "nec": 538, "real": 363.69, "ad": 0.676005, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA S/ ACUCARES 12X300ML", "est": 2322, "cota": 2430, "nec": 108, "real": 86.74, "ad": 0.803102, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 24X600ML - RET", "est": 404, "cota": 763, "nec": 359, "real": 215.41, "ad": 0.600031, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "VIVAZ", "produto": "VIVAZ TUBAINA 12X355ML", "est": 491, "cota": 1028, "nec": 537, "real": 342.76, "ad": 0.638286, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CHOPP VINHO", "marca": "VILLA ROSA", "produto": "CV VILLA ROSA 6X600ML", "est": 1721, "cota": 2291, "nec": 570, "real": 373.15, "ad": 0.654643, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CHOPP VINHO", "marca": "VILLA ROSA", "produto": "CV VILLA ROSA INTER PORTO 6X600ML", "est": 1291, "cota": 1470, "nec": 179, "real": 114.68, "ad": 0.640696, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CERVEJA", "marca": "SERRANA", "produto": "CER SERRANA 12X330ML", "est": 1027, "cota": 1635, "nec": 608, "real": 572.28, "ad": 0.941244, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 6X355ML", "est": 516, "cota": 997, "nec": 481, "real": 371.56, "ad": 0.772476, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 24X600ML - RET", "est": 1683, "cota": 2107, "nec": 424, "real": 370.75, "ad": 0.874399, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 6X600ML", "est": 1007, "cota": 1189, "nec": 182, "real": 126.58, "ad": 0.695505, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "VOD SERRANA", "produto": "VOD SERRANA 6X970ML", "est": 1779, "cota": 2193, "nec": 414, "real": 390.81, "ad": 0.943994, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "HARLOW", "produto": "VOD HARLOW 6X900ML", "est": 283, "cota": 538, "nec": 255, "real": 248.6, "ad": 0.974891, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "HARLOW", "produto": "GIN HARLOW 6X900ML", "est": 666, "cota": 1203, "nec": 537, "real": 424.43, "ad": 0.790374, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "REFRIGERANTE", "marca": "ZAMBA", "produto": "ZAMBA TUBAINA 24X605ML", "est": 964, "cota": 1531, "nec": 567, "real": 497.15, "ad": 0.876808, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CERVEJA", "marca": "AURELIA", "produto": "CER AURELIA 6X600ML EXP", "est": 719, "cota": 1363, "nec": 644, "real": 605.52, "ad": 0.940247, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "CERVEJA", "marca": "SERRANA", "produto": "CER SERRANA 12X330ML EXP", "est": 1519, "cota": 1864, "nec": 345, "real": 275.58, "ad": 0.798781, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "VOD SERRANA", "produto": "VOD SERRANA 6X970ML EXP", "est": 349, "cota": 759, "nec": 410, "real": 317.32, "ad": 0.773959, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "HARLOW", "produto": "GIN HARLOW 6X900ML EXP", "est": 1881, "cota": 2498, "nec": 617, "real": 565.64, "ad": 0.916761, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "HARLOW", "produto": "VOD HARLOW 6X900ML EXP", "est": 2136, "cota": 2378, "nec": 242, "real": 230.94, "ad": 0.954278, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "HARLOW", "produto": "GIN HARLOW INTER PORTO 6X900ML", "est": 1150, "cota": 1367, "nec": 217, "real": 144.73, "ad": 0.666958, "periodo": "Setembro/2026", "pkey": 202609}, {"local": "SUL VIDRO", "familia": "DESTILADO", "marca": "HARLOW", "produto": "VOD HARLOW INTER PORTO 6X900ML", "est": 923, "cota": 1050, "nec": 127, "real": 110.58, "ad": 0.870671, "periodo": "Setembro/2026", "pkey": 202609}];
+const META = {"gerado": "21/09/2026"};
+let DATA = [];
+let PERIODS = [];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fNum = v => Math.round(v||0).toLocaleString('pt-BR');
+const fPct = v => (v*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+const fCompact = v => {
+  v = v||0;
+  if (Math.abs(v) >= 1000000) return (v/1000000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' mi';
+  if (Math.abs(v) >= 1000) return (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:0}) + ' mil';
+  return fNum(v);
+};
+const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const cmp = (a,b) => String(a).localeCompare(String(b),'pt-BR');
+
+const COLORS = {brand:'#9b7bff', green:'#8fd94b', blue:'#4aa8ff', orange:'#ff9a3d', purple:'#e879f9', red:'#ff5a4f', cyan:'#22d3ee', mute:'#7a7499'};
+const BAND_COLOR = {ok:COLORS.green, att:COLORS.orange, crit:COLORS.red, sem:COLORS.mute};
+const BAND_LABEL = {ok:'No verde', att:'Em atenção', crit:'Críticos', sem:'Sem necessidade'};
+const HSL = {red:[3.8,100,65.5], orange:[28.8,100,62], green:[91.3,65.1,57.3]};   // mesmas cores do modelo, em HSL
+
+const HAS_CHART = typeof window.Chart !== 'undefined';
+const CHART_FONT = "'Inter', sans-serif";
+if (HAS_CHART){
+  Chart.defaults.font.family = CHART_FONT;
+  Chart.defaults.color = '#b3acd0';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+}
+function tooltipBase(){
+  return {
+    backgroundColor:'#1d1838', borderColor:'rgba(255,255,255,0.12)', borderWidth:1,
+    titleFont:{family:CHART_FONT, weight:'600', size:12.5}, bodyFont:{family:CHART_FONT, size:12},
+    padding:11, cornerRadius:10, displayColors:true, boxPadding:4
+  };
+}
+
+const MES_NUM = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
+const MES_NOME = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function prepare(rows){
+  const list = rows.map(r => Object.assign({}, r));
+  list.forEach(d => {
+    d._s = norm([d.produto,d.local,d.marca,d.familia].join(' '));
+    d.adv = d.nec > 0 ? d.ad : null;
+    d.falta = d.nec > 0 ? Math.max(0, d.nec - d.real) : null;
+  });
+  const seen = new Map();
+  list.forEach(d => { if (!seen.has(d.periodo)) seen.set(d.periodo, d.pkey || 0); });
+  PERIODS = [...seen].map(([label,pkey]) => ({label, pkey})).sort((a,b) => a.pkey - b.pkey);
+  return list;
+}
+
+/* Leitura da planilha base_aderencia.xlsx (nomes de coluna normalizados) */
+function toNum(v){
+  if (typeof v === 'number') return v;
+  if (v == null || v === '') return NaN;
+  const t = String(v).trim();
+  return Number(t.indexOf(',') >= 0 ? t.replace(/\./g,'').replace(',','.') : t);
+}
+function rowsFromSheet(json){
+  if (!json.length) throw new Error('a planilha está vazia');
+  const key = k => norm(String(k)).replace(/[^a-z0-9]+/g,' ').trim();
+  const first = {}; Object.keys(json[0]).forEach(k => { first[key(k)] = true; });
+  const required = [['produto','PRODUTO'],['local','LOCAL'],['estoque inicial','ESTOQUE INICIAL'],['cota local','COTA LOCAL'],['producao real','PRODUÇÃO REAL']];
+  required.forEach(r => { if (!first[r[0]]) throw new Error('coluna "' + r[1] + '" não encontrada'); });
+  const out = [];
+  json.forEach(raw => {
+    const r = {}; Object.keys(raw).forEach(k => { r[key(k)] = raw[k]; });
+    const produto = r['produto'] == null ? '' : String(r['produto']).trim();
+    const est = toNum(r['estoque inicial']), cota = toNum(r['cota local']), real = toNum(r['producao real']);
+    if (!produto || !isFinite(est) || !isFinite(cota) || !isFinite(real)) return;
+    let nec = toNum(r['necess prod']); if (!isFinite(nec)) nec = cota - est;
+    const mes = String(r['mes'] == null ? '' : r['mes']).trim().toUpperCase().slice(0,3), ano = toNum(r['ano']);
+    const mn = MES_NUM[mes];
+    out.push({
+      local:String(r['local'] == null ? '' : r['local']).trim() || '(sem local)',
+      familia:String(r['familia'] == null ? '' : r['familia']).trim() || '(sem família)',
+      marca:String(r['marca'] == null ? '' : r['marca']).trim() || '(sem marca)',
+      produto, est, cota, nec, real, ad: nec !== 0 ? real / nec : 0,
+      periodo: mn && isFinite(ano) ? MES_NOME[mn] + '/' + ano : 'Sem período',
+      pkey: mn && isFinite(ano) ? ano * 100 + mn : 0
+    });
+  });
+  return out;
+}
+
+const state = {
+  periodo:new Set(), local:new Set(), familia:new Set(), marca:new Set(), situ:new Set(), q:'',
+  low:75, high:90, group:'local', sortKey:'adv', sortDir:1
+};
+
+function band(d){
+  if (d.nec <= 0) return 'sem';
+  const p = d.ad * 100;
+  if (p >= state.high) return 'ok';
+  if (p < state.low) return 'crit';
+  return 'att';
+}
+function passes(d){
+  if (state.periodo.size && !state.periodo.has(d.periodo)) return false;
+  if (state.local.size   && !state.local.has(d.local))     return false;
+  if (state.familia.size && !state.familia.has(d.familia)) return false;
+  if (state.marca.size   && !state.marca.has(d.marca))     return false;
+  if (state.situ.size    && !state.situ.has(band(d)))      return false;
+  if (state.q && !state.q.split(' ').every(t => d._s.includes(t))) return false;
+  return true;
+}
+function agg(list){
+  const r = {nec:0, real:0, est:0, cota:0, n:0, ok:0, att:0, crit:0, sem:0, total:list.length,
+    by:{ok:{nec:0,real:0,n:0}, att:{nec:0,real:0,n:0}, crit:{nec:0,real:0,n:0}}};
+  for (const d of list){
+    const b = band(d);
+    if (b === 'sem'){ r.sem++; continue; }
+    r.nec += d.nec; r.real += d.real; r.est += d.est; r.cota += d.cota; r.n++; r[b]++;
+    r.by[b].nec += d.nec; r.by[b].real += d.real; r.by[b].n++;
+  }
+  r.falta = Math.max(0, r.nec - r.real);
+  r.ad = r.nec > 0 ? r.real / r.nec : null;
+  return r;
+}
+function groupBy(list, dim){
+  const map = new Map();
+  for (const d of list){
+    if (!map.has(d[dim])) map.set(d[dim], []);
+    map.get(d[dim]).push(d);
+  }
+  return [...map].map(([k,l]) => Object.assign({k}, agg(l)));
+}
+
+/* Escala vermelho, laranja e verde (cores do modelo) entre as duas faixas */
+function scaleColor(v){
+  const p = v*100, lo = state.low, hi = state.high;
+  let t = hi > lo ? (p-lo)/(hi-lo) : (p >= hi ? 1 : 0);
+  t = Math.max(0, Math.min(1, t));
+  const a = t < .5 ? HSL.red : HSL.orange, b = t < .5 ? HSL.orange : HSL.green;
+  const u = t < .5 ? t*2 : (t-.5)*2;
+  const h = a[0] + (b[0]-a[0])*u, s = a[1] + (b[1]-a[1])*u, l = a[2] + (b[2]-a[2])*u;
+  return 'hsl(' + h.toFixed(1) + ', ' + s.toFixed(1) + '%, ' + l.toFixed(1) + '%)';
+}
+function miniBar(v){
+  const w = Math.max(0, Math.min(1, v)) * 100;
+  return '<span class="mbar"><span class="fill" style="width:' + w.toFixed(1) + '%;background:' + scaleColor(v) + '"></span></span>';
+}
+
+/* ---------- GRÁFICOS ---------- */
+const charts = {};
+function destroyChart(k){ if (charts[k]){ charts[k].destroy(); delete charts[k]; } }
+function putChart(key, boxId, cfg, emptyMsg){
+  destroyChart(key);
+  const box = $(boxId);
+  if (!HAS_CHART){ box.innerHTML = '<div class="empty-state">Não foi possível carregar a biblioteca de gráficos.<br>Verifique a conexão com a internet.</div>'; return false; }
+  if (!cfg){ box.innerHTML = '<div class="empty-state">' + emptyMsg + '</div>'; return false; }
+  const id = 'cv_' + key;
+  box.innerHTML = '<canvas id="' + id + '"></canvas>';
+  charts[key] = new Chart(document.getElementById(id), cfg);
+  return true;
+}
+const EMPTY = 'Nenhum dado de aderência para os filtros selecionados.';
+const GRID = 'rgba(255,255,255,0.05)';
+
+function renderSitu(list){
+  const a = agg(list);
+  const keys = ['ok','att','crit','sem'].filter(k => a[k] > 0);
+  const insight = $('#insightSitu');
+  if (!keys.length){ putChart('situ','#chartSituBox',null,EMPTY); insight.innerHTML = ''; return; }
+  const total = keys.reduce((s,k) => s + a[k], 0);
+  putChart('situ','#chartSituBox',{
+    type:'doughnut',
+    data:{labels:keys.map(k => BAND_LABEL[k]), datasets:[{data:keys.map(k => a[k]), backgroundColor:keys.map(k => BAND_COLOR[k]), borderColor:'#16122b', borderWidth:3, hoverOffset:6}]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      onClick:(evt, els) => { if (els.length) toggleChip('situ', keys[els[0].index]); },
+      plugins:{
+        legend:{position:'right', labels:{boxWidth:9, boxHeight:9, usePointStyle:true, pointStyle:'circle', padding:10, font:{size:11}}},
+        tooltip:Object.assign(tooltipBase(), {callbacks:{label:c => '  ' + c.label + ': ' + fNum(c.parsed) + ' itens (' + (c.parsed/total*100).toFixed(1).replace('.',',') + '%)'}})
+      }
+    }
+  });
+  insight.innerHTML = a.n > 0
+    ? '<b>' + fNum(a.crit) + '</b> de ' + fNum(a.n) + ' itens com necessidade estão abaixo de ' + state.low + '%. Clique numa fatia para filtrar.'
+    : 'Todos os itens do recorte estão sem necessidade de produção.';
+}
+
+function aderenciaBar(key, boxId, insightId, dim, horizontal, chipGroup){
+  const rows = groupBy(list_(), dim).filter(r => r.ad != null).sort((a,b) => a.ad - b.ad);
+  const insight = $(insightId);
+  if (!rows.length){ putChart(key,boxId,null,EMPTY); insight.innerHTML = ''; return; }
+  const labels = rows.map(r => r.k);
+  const vals = rows.map(r => +(r.ad*100).toFixed(2));
+  const valueAxis = {min:0, max:100, grid:{color:GRID}, ticks:{callback:v => v + '%', font:{size:10}}};
+  const catAxis = {grid:{display:false}, ticks:{font:{size:11}}};
+  putChart(key,boxId,{
+    type:'bar',
+    data:{labels, datasets:[{data:vals, backgroundColor:rows.map(r => scaleColor(r.ad)), borderRadius:6, maxBarThickness: horizontal ? 26 : 34}]},
+    options:{
+      indexAxis: horizontal ? 'y' : 'x', responsive:true, maintainAspectRatio:false,
+      onClick:(evt, els) => { if (els.length) toggleChip(chipGroup, labels[els[0].index]); },
+      plugins:{
+        legend:{display:false},
+        tooltip:Object.assign(tooltipBase(), {callbacks:{
+          label:c => '  Aderência: ' + fPct(rows[c.dataIndex].ad),
+          afterLabel:c => '  Falta produzir: ' + fNum(rows[c.dataIndex].falta)
+        }})
+      },
+      scales: horizontal ? {x:valueAxis, y:catAxis} : {x:catAxis, y:valueAxis}
+    }
+  });
+  const w = rows[0];
+  insight.innerHTML = '<b>' + esc(w.k) + '</b> tem a menor aderência (' + fPct(w.ad) + '), com ' + fNum(w.falta) + ' ainda por produzir. Clique numa barra para filtrar.';
+}
+
+function wrapLabel(s, n){
+  const words = s.split(' '), lines = []; let cur = '';
+  for (const w of words){
+    if (cur && (cur + ' ' + w).length > n){ lines.push(cur); cur = w; }
+    else cur = cur ? cur + ' ' + w : w;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+function renderTop(list){
+  const items = list.filter(d => d.nec > 0).sort((a,b) => b.falta - a.falta).slice(0,10);
+  const insight = $('#insightTop');
+  if (!items.length){ putChart('top','#chartTopBox',null,EMPTY); insight.innerHTML = ''; return; }
+  const labels = items.map(d => wrapLabel(d.produto + ' (' + d.local + ')', 34));
+  putChart('top','#chartTopBox',{
+    type:'bar',
+    data:{labels, datasets:[{data:items.map(d => d.falta), backgroundColor:items.map(d => scaleColor(d.ad)), borderRadius:6, maxBarThickness:20}]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      onClick:(evt, els) => { if (els.length) setSearch(items[els[0].index].produto); },
+      plugins:{
+        legend:{display:false},
+        tooltip:Object.assign(tooltipBase(), {callbacks:{
+          title:its => items[its[0].dataIndex].produto,
+          label:c => '  Falta produzir: ' + fNum(c.parsed.x),
+          afterLabel:c => { const d = items[c.dataIndex]; return ['  Local: ' + d.local, '  Aderência: ' + fPct(d.ad)]; }
+        }})
+      },
+      scales:{
+        x:{grid:{color:GRID}, ticks:{callback:v => fCompact(v), font:{size:10}}},
+        y:{grid:{display:false}, ticks:{font:{size:10.5}, autoSkip:false}}
+      }
+    }
+  });
+  insight.innerHTML = 'Maiores volumes ainda por produzir no recorte atual, coloridos pela aderência de cada item. Clique numa barra para ver o item na tabela.';
+}
+
+function renderDist(list){
+  const items = list.filter(d => d.nec > 0);
+  const insight = $('#insightDist');
+  if (!items.length){ putChart('dist','#chartDistBox',null,EMPTY); insight.innerHTML = ''; return; }
+  const pcts = items.map(d => d.ad*100);
+  const minB = Math.max(0, Math.floor(Math.min.apply(null, pcts)/5)*5);
+  const labels = [], counts = [];
+  for (let s = minB; s < 100; s += 5){ labels.push(s + '–' + (s+5) + '%'); counts.push(0); }
+  pcts.forEach(p => { let i = Math.floor((p-minB)/5); i = Math.max(0, Math.min(counts.length-1, i)); counts[i]++; });
+  const cv = document.createElement('canvas');
+  const g = cv.getContext('2d').createLinearGradient(0,0,0,430);
+  g.addColorStop(0,'rgba(155,123,255,0.35)'); g.addColorStop(1,'rgba(155,123,255,0.0)');
+  putChart('dist','#chartDistBox',{
+    type:'line',
+    data:{labels, datasets:[{data:counts, borderColor:COLORS.brand, backgroundColor:g, fill:true, tension:0.35, pointRadius:3,
+      pointBackgroundColor:COLORS.brand, pointBorderColor:'#0b0918', pointBorderWidth:2, pointHoverRadius:5, borderWidth:2.5}]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:Object.assign(tooltipBase(), {callbacks:{label:c => '  ' + fNum(c.parsed.y) + ' itens'}})},
+      scales:{
+        x:{grid:{display:false}, ticks:{font:{size:10.5}}},
+        y:{beginAtZero:true, grid:{color:GRID}, ticks:{precision:0, font:{size:10}}}
+      }
+    }
+  });
+  const peak = counts.indexOf(Math.max.apply(null, counts));
+  insight.innerHTML = 'A maior concentração está entre <b>' + labels[peak].replace('–',' e ') + '</b> (' + fNum(counts[peak]) + ' itens de ' + fNum(items.length) + ' com necessidade).';
+}
+
+const GROUP_LABEL = {local:'Local', familia:'Família', marca:'Marca'};
+function renderGrupo(list){
+  const dim = state.group;
+  const rows = groupBy(list, dim).filter(r => r.n > 0).sort((a,b) => b.falta - a.falta || cmp(a.k,b.k));
+  const insight = $('#insightGrupo');
+  if (!rows.length){ putChart('grupo','#chartGrupoBox',null,EMPTY); insight.innerHTML = ''; return; }
+  putChart('grupo','#chartGrupoBox',{
+    type:'bar',
+    data:{labels:rows.map(r => r.k), datasets:[
+      {label:'Necess. prod.', data:rows.map(r => r.nec), backgroundColor:COLORS.blue, borderRadius:8, maxBarThickness:40},
+      {label:'Produção real', data:rows.map(r => Math.round(r.real)), backgroundColor:COLORS.green, borderRadius:8, maxBarThickness:40}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      onClick:(evt, els) => { if (els.length) toggleChip(dim, rows[els[0].index].k); },
+      plugins:{
+        legend:{position:'top', align:'end', labels:{boxWidth:9, boxHeight:9, usePointStyle:true, pointStyle:'circle', padding:14, font:{size:11}}},
+        tooltip:Object.assign(tooltipBase(), {callbacks:{
+          label:c => '  ' + c.dataset.label + ': ' + fNum(c.parsed.y),
+          afterBody:its => '  Aderência: ' + fPct(rows[its[0].dataIndex].ad) + '  |  Falta: ' + fNum(rows[its[0].dataIndex].falta)
+        }})
+      },
+      scales:{
+        x:{grid:{display:false}, ticks:{font:{size:11}}},
+        y:{grid:{color:GRID}, ticks:{callback:v => fCompact(v), font:{size:10}}}
+      }
+    }
+  });
+  const t = rows[0];
+  insight.innerHTML = 'Por ' + GROUP_LABEL[dim].toLowerCase() + ', <b>' + esc(t.k) + '</b> tem a maior lacuna: ' + fNum(t.falta) + ' a produzir (aderência de ' + fPct(t.ad) + '). Clique numa barra para filtrar.';
+}
+
+/* ---------- KPIs ---------- */
+const ICONS = {
+  target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  trend:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  box:'<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7.3L12 12l8.7-4.7M12 22V12"/>'
+};
+const KPI_STATIC = [
+  {label:'Necess. prod.',        icon:'target', accent:COLORS.blue},
+  {label:'Produção real',        icon:'check',  accent:COLORS.green},
+  {label:'Falta produzir',       icon:'clock',  accent:COLORS.orange},
+  {label:'Aderência global',     icon:'trend',  accent:COLORS.purple},
+  {label:'Itens com necessidade',icon:'box',    accent:COLORS.cyan}
+];
+function renderKpis(a){
+  const by = a.by;
+  const falta = b => Math.max(0, by[b].nec - by[b].real);
+  const dyn = [
+    {value:fNum(a.nec),  chip:b => fNum(by[b].nec), fill:100},
+    {value:fNum(a.real), chip:b => fNum(by[b].real), fill:100},
+    {value:fNum(a.falta),chip:b => fNum(falta(b)), fill:100},
+    {value:a.ad == null ? '—' : fPct(a.ad), chip:b => by[b].nec > 0 ? fPct(by[b].real/by[b].nec) : '—', fill:a.ad == null ? 0 : a.ad*100},
+    {value:fNum(a.n),    chip:b => fNum(by[b].n), fill:100, sem:true}
+  ];
+  const grid = $('#kpiGrid');
+  if (!grid.children.length){
+    KPI_STATIC.forEach((k,i) => {
+      const el = document.createElement('div');
+      el.className = 'kpi-card';
+      el.style.animationDelay = (i*0.04) + 's';
+      el.innerHTML = '<div class="kpi-label"><svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="' + k.accent + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[k.icon] + '</svg>' + k.label + '</div>' +
+        '<div class="kpi-value"></div><div class="kpi-chips"></div>' +
+        '<div class="kpi-fill-track"><div class="kpi-fill" style="width:0;background:' + k.accent + '"></div></div>';
+      grid.appendChild(el);
+    });
+  }
+  dyn.forEach((d,i) => {
+    const el = grid.children[i];
+    el.querySelector('.kpi-value').textContent = d.value;
+    const chips = ['ok','att','crit'].map(b =>
+      '<div class="kpi-chip"><span class="kpi-chip-label"><span class="kpi-chip-dot" style="background:' + BAND_COLOR[b] + '"></span>' + BAND_LABEL[b] + '</span><span class="kpi-chip-val">' + d.chip(b) + '</span></div>');
+    if (d.sem) chips.push('<div class="kpi-chip"><span class="kpi-chip-label"><span class="kpi-chip-dot" style="background:' + BAND_COLOR.sem + '"></span>' + BAND_LABEL.sem + '</span><span class="kpi-chip-val">' + fNum(a.sem) + '</span></div>');
+    el.querySelector('.kpi-chips').innerHTML = chips.join('');
+    el.querySelector('.kpi-fill').style.width = d.fill.toFixed(1) + '%';
+  });
+}
+
+/* ---------- TABELA ---------- */
+const COLS = [
+  ['produto','Produto',true,'Descrição do produto'],
+  ['local','Local',true,'Local de produção'],
+  ['est','Estoque inicial',false,'Estoque em que o produto está atualmente'],
+  ['cota','Cota local',false,'Produção prevista para o mês'],
+  ['nec','Necess. prod.',false,'Cota local menos estoque inicial: quanto precisa produzir'],
+  ['real','Produção real',false,'Quanto realmente foi produzido'],
+  ['falta','Falta produzir',false,'Necessidade menos produção real'],
+  ['adv','Aderência (%)',false,'Produção real dividida pela necessidade de produção']
+];
+function sorted(list){
+  const k = state.sortKey, dir = state.sortDir;
+  return list.slice().sort((a,b) => {
+    const x = a[k], y = b[k];
+    if (x == null && y == null) return cmp(a.produto,b.produto);
+    if (x == null) return 1;
+    if (y == null) return -1;
+    const c = typeof x === 'string' ? cmp(x,y) : x - y;
+    return c ? c*dir : cmp(a.produto,b.produto);
+  });
+}
+function renderTable(list){
+  $('#thead').innerHTML = '<tr>' + COLS.map(c => {
+    const on = state.sortKey === c[0];
+    const aria = on ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none';
+    return '<th scope="col" class="' + (c[2] && c[0] !== 'produto' ? 'txt' : '') + '" aria-sort="' + aria + '">' +
+      '<button type="button" data-sort="' + c[0] + '" title="' + esc(c[3]) + '">' + c[1] +
+      '<span class="arr">' + (on ? (state.sortDir === 1 ? '▲' : '▼') : '') + '</span></button></th>';
+  }).join('') + '</tr>';
+
+  const rows = sorted(list);
+  const sk = COLS.find(c => c[0] === state.sortKey)[1];
+  $('#countLine').textContent = fNum(rows.length) + ' de ' + fNum(periodRows().length) + ' itens · ordenado por ' + sk.toLowerCase() + (state.sortDir === 1 ? ' (menor primeiro)' : ' (maior primeiro)');
+
+  const a = agg(list);
+  if (!rows.length){
+    $('#tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;font-family:var(--font-body);color:var(--text-mute);padding:34px">Nenhum item com esses filtros. Use “Limpar filtros” para ver todos os itens.</td></tr>';
+    $('#tfoot').innerHTML = '';
+    return;
+  }
+  $('#tbody').innerHTML = rows.map(d => {
+    const sem = d.nec <= 0;
+    return '<tr class="' + (sem ? 'is-sem' : '') + '">' +
+      '<td><div>' + esc(d.produto) + '</div><div class="psub">' + esc(d.familia) + ', ' + esc(d.marca) + '</div></td>' +
+      '<td class="txt">' + esc(d.local) + '</td>' +
+      '<td>' + fNum(d.est) + '</td><td>' + fNum(d.cota) + '</td><td>' + fNum(d.nec) + '</td><td>' + fNum(d.real) + '</td>' +
+      '<td>' + (d.falta == null ? '—' : fNum(d.falta)) + '</td>' +
+      '<td>' + (sem ? '<span class="tag-sem">sem necessidade</span>' : '<span class="adcell">' + miniBar(d.ad) + '<span class="pct">' + fPct(d.ad) + '</span></span>') + '</td></tr>';
+  }).join('');
+  $('#tfoot').innerHTML = '<tr><td>Total</td><td class="txt"></td><td>' + fNum(a.est) + '</td><td>' + fNum(a.cota) + '</td><td>' + fNum(a.nec) + '</td><td>' + fNum(a.real) + '</td><td>' + fNum(a.falta) + '</td>' +
+    '<td>' + (a.ad == null ? '—' : fPct(a.ad)) + '</td></tr>';
+}
+
+/* ---------- FILTROS ---------- */
+let GROUPS = [];
+function buildGroups(){
+  GROUPS = [];
+  if (PERIODS.length > 1) GROUPS.push({key:'periodo', label:'Período', all:'Todos', values:() => PERIODS.map(p => p.label)});
+  GROUPS.push(
+    {key:'local',   label:'Local',    all:'Todos', values:() => uniq('local')},
+    {key:'familia', label:'Família',  all:'Todas', values:() => uniq('familia')},
+    {key:'marca',   label:'Marca',    all:'Todas', values:() => uniq('marca')},
+    {key:'situ',    label:'Situação', all:'Todas', values:() => ['ok','att','crit','sem'], fmt:v => BAND_LABEL[v]}
+  );
+}
+function uniq(k){ return [...new Set(DATA.map(d => d[k]))].sort(cmp); }
+
+function buildDropdowns(){
+  const chev = '<svg class="dd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  $('#ddRow').innerHTML = GROUPS.map(g =>
+    '<div class="dd" data-group="' + g.key + '">' +
+      '<button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="dd-' + g.key + '">' +
+        '<span class="dd-label">' + g.label + '</span><span class="dd-value">' + g.all + '</span>' + chev + '</button>' +
+      '<div class="dd-panel" id="dd-' + g.key + '" role="group" aria-label="' + g.label + '" hidden>' +
+        '<label class="dd-opt dd-all"><input type="checkbox" data-value="__ALL__" checked><span>' + g.all + '</span></label>' +
+        g.values().map(v => '<label class="dd-opt"><input type="checkbox" data-value="' + esc(v) + '">' +
+          (g.key === 'situ' ? '<span class="dd-dot" style="background:' + BAND_COLOR[v] + '"></span>' : '') +
+          '<span>' + esc(g.fmt ? g.fmt(v) : v) + '</span></label>').join('') +
+      '</div></div>').join('');
+}
+function closeAllDropdowns(focusBtn){
+  document.querySelectorAll('#ddRow .dd.open').forEach(dd => {
+    dd.classList.remove('open');
+    dd.querySelector('.dd-panel').hidden = true;
+    const b = dd.querySelector('.dd-btn'); b.setAttribute('aria-expanded','false');
+    if (focusBtn) b.focus();
+  });
+}
+function wireDropdowns(){
+  const row = $('#ddRow');
+  row.addEventListener('click', e => {
+    const btn = e.target.closest('.dd-btn');
+    if (!btn) return;
+    const dd = btn.closest('.dd'), wasOpen = dd.classList.contains('open');
+    closeAllDropdowns(false);
+    if (wasOpen) return;
+    dd.classList.add('open');
+    const panel = dd.querySelector('.dd-panel');
+    panel.hidden = false; panel.style.left = '0'; panel.style.right = 'auto';
+    const r = panel.getBoundingClientRect();
+    if (r.right > window.innerWidth - 12){ panel.style.left = 'auto'; panel.style.right = '0'; }
+    btn.setAttribute('aria-expanded','true');
+  });
+  row.addEventListener('change', e => {
+    const cb = e.target.closest('input[type="checkbox"]');
+    if (!cb) return;
+    const g = cb.closest('.dd').dataset.group, v = cb.dataset.value;
+    if (v === '__ALL__') state[g].clear();
+    else if (cb.checked) state[g].add(v); else state[g].delete(v);
+    syncUI(); renderAll();
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.dd')) closeAllDropdowns(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllDropdowns(true); });
+}
+function toggleChip(group, value){
+  const set = state[group];
+  if (set.has(value)) set.delete(value); else set.add(value);
+  syncUI();
+  renderAll();
+}
+function activeCount(){ return state.local.size + state.familia.size + state.marca.size + state.situ.size + (state.q ? 1 : 0); }
+function syncUI(){
+  document.querySelectorAll('.dd').forEach(dd => {
+    const g = GROUPS.find(x => x.key === dd.dataset.group), set = state[g.key];
+    dd.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = cb.dataset.value === '__ALL__' ? set.size === 0 : set.has(cb.dataset.value);
+    });
+    const val = set.size === 0 ? g.all : (set.size === 1 ? (g.fmt ? g.fmt([...set][0]) : [...set][0]) : set.size + ' selecionados');
+    dd.querySelector('.dd-value').textContent = val;
+    dd.querySelector('.dd-btn').classList.toggle('has', set.size > 0);
+  });
+  const n = activeCount();
+  $('#filterCount').textContent = n > 0 ? n + ' filtro' + (n > 1 ? 's' : '') + ' ativo' + (n > 1 ? 's' : '') : 'nenhum filtro ativo';
+  $('#th-high').value = state.high;
+  $('#th-low').value = state.low;
+  document.querySelectorAll('#groupCtrl .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.group === state.group));
+}
+function setSearch(text){
+  $('#searchInput').value = text;
+  state.q = norm(text.trim()).replace(/\s+/g,' ');
+  syncUI(); renderAll();
+}
+function setDefaultPeriodo(){
+  state.periodo.clear();
+  if (PERIODS.length > 1) state.periodo.add(PERIODS[PERIODS.length-1].label);
+}
+function resetFilters(){
+  state.local.clear(); state.familia.clear(); state.marca.clear(); state.situ.clear(); state.q = '';
+  setDefaultPeriodo();
+  $('#searchInput').value = '';
+  syncUI(); renderAll();
+}
+
+/* ---------- RENDER ---------- */
+let CURRENT = [];
+function list_(){ return CURRENT; }
+function periodRows(){ return DATA.filter(d => !state.periodo.size || state.periodo.has(d.periodo)); }
+function periodLabel(){
+  if (!PERIODS.length) return '';
+  if (PERIODS.length === 1) return PERIODS[0].label;
+  if (state.periodo.size === 1) return [...state.periodo][0];
+  return (state.periodo.size || PERIODS.length) + ' períodos';
+}
+
+function renderMeta(){
+  const pr = periodRows();
+  const locais = new Set(pr.map(d => d.local)).size;
+  $('#sub').textContent = periodLabel().replace('/',' de ') + ' · ' + fNum(pr.length) + ' itens em ' + locais + ' locais';
+  const sem = pr.filter(d => d.nec <= 0).length;
+  $('#noticeText').innerHTML = 'A aderência é <b>produção real ÷ necessidade</b>, onde <code>NECESS. PROD.</code> = <code>COTA LOCAL − ESTOQUE INICIAL</code>. ' +
+    (sem > 0 ? '<b>' + sem + (sem === 1 ? ' item tem' : ' itens têm') + '</b> estoque acima da cota (necessidade e produção real negativas na base): aparecem na tabela, mas ficam fora do cálculo de aderência. ' : '') +
+    'Clique nos gráficos para filtrar.';
+}
+function setFooter(info){
+  const n = fNum(DATA.length) + ' linhas';
+  const fmt = d => d.toLocaleString('pt-BR',{dateStyle:'short', timeStyle:'short'});
+  let t;
+  if (info.source === 'xlsx') t = 'Dados lidos de base_aderencia.xlsx (' + n + ') · ' + (info.hasLM ? 'arquivo atualizado em ' : 'carregado em ') + fmt(info.when);
+  else if (info.source === 'file') t = 'Dados lidos de ' + info.name + ' (' + n + ') · arquivo atualizado em ' + fmt(info.when);
+  else t = 'Dados embutidos de base_aderencia.xlsx (' + n + ') · gerado em ' + META.gerado;
+  $('#ftrText').textContent = t;
+}
+function renderAll(){
+  const root = document.documentElement.style;
+  root.setProperty('--lo', state.low + '%');
+  root.setProperty('--hi', state.high + '%');
+  CURRENT = DATA.filter(passes);
+  renderMeta();
+  renderKpis(agg(CURRENT));
+  renderSitu(CURRENT);
+  aderenciaBar('local','#chartLocalBox','#insightLocal','local',true,'local');
+  aderenciaBar('fam','#chartFamBox','#insightFam','familia',false,'familia');
+  renderTop(CURRENT);
+  renderDist(CURRENT);
+  renderGrupo(CURRENT);
+  renderTable(CURRENT);
+}
+
+function setData(rows, info){
+  DATA = prepare(rows);
+  state.local.clear(); state.familia.clear(); state.marca.clear(); state.situ.clear(); state.q = '';
+  setDefaultPeriodo();
+  $('#searchInput').value = '';
+  buildGroups(); buildDropdowns(); setFooter(info);
+  syncUI(); renderAll();
+}
+
+/* ---------- CARGA DA PLANILHA ---------- */
+function parseWorkbook(buf){
+  if (!window.XLSX) throw new Error('biblioteca de leitura de planilhas não carregou (verifique a internet)');
+  const wb = XLSX.read(buf, {type:'array'});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = rowsFromSheet(XLSX.utils.sheet_to_json(ws, {defval:null}));
+  if (!rows.length) throw new Error('nenhuma linha válida na planilha');
+  return rows;
+}
+async function loadFromXlsx(){
+  const res = await fetch('base_aderencia.xlsx?t=' + Date.now(), {cache:'no-store'});
+  if (!res.ok) throw new Error('arquivo não encontrado (HTTP ' + res.status + ')');
+  const rows = parseWorkbook(await res.arrayBuffer());
+  const lm = res.headers.get('last-modified');
+  return {rows, info:{source:'xlsx', hasLM:!!lm, when: lm ? new Date(lm) : new Date()}};
+}
+function showLoadStatus(msg){
+  const box = $('#loadStatus');
+  box.hidden = !msg;
+  if (msg) $('#loadStatusText').textContent = msg;
+}
+
+function wireControls(){
+  wireDropdowns();
+  $('#pickBtn').addEventListener('click', () => $('#fileInput').click());
+  $('#fileInput').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try {
+      const rows = parseWorkbook(await f.arrayBuffer());
+      showLoadStatus('');
+      setData(rows, {source:'file', name:f.name, when:new Date(f.lastModified)});
+    } catch (err) {
+      showLoadStatus('Não foi possível ler "' + f.name + '" (' + err.message + '). Selecione o arquivo base_aderencia.xlsx com as colunas originais.');
+    }
+    e.target.value = '';
+  });
+  $('#filterResetBtn').addEventListener('click', resetFilters);
+  let timer = null;
+  $('#searchInput').addEventListener('input', e => {
+    const v = e.target.value;
+    clearTimeout(timer);
+    timer = setTimeout(() => { state.q = norm(v.trim()).replace(/\s+/g,' '); syncUI(); renderAll(); }, 180);
+  });
+  $('#th-high').addEventListener('change', e => {
+    let v = Number(e.target.value); if (!isFinite(v)) v = state.high;
+    state.high = Math.min(100, Math.max(1, Math.round(v)));
+    if (state.low >= state.high) state.low = state.high - 1;
+    syncUI(); renderAll();
+  });
+  $('#th-low').addEventListener('change', e => {
+    let v = Number(e.target.value); if (!isFinite(v)) v = state.low;
+    state.low = Math.min(99, Math.max(0, Math.round(v)));
+    if (state.high <= state.low) state.high = state.low + 1;
+    syncUI(); renderAll();
+  });
+  $('#groupCtrl').addEventListener('click', e => {
+    const b = e.target.closest('.seg-btn'); if (!b) return;
+    state.group = b.dataset.group; syncUI(); renderGrupo(CURRENT);
+  });
+  $('#thead').addEventListener('click', e => {
+    const b = e.target.closest('[data-sort]'); if (!b) return;
+    const k = b.dataset.sort;
+    if (state.sortKey === k) state.sortDir *= -1;
+    else { state.sortKey = k; state.sortDir = (k === 'produto' || k === 'local' || k === 'adv') ? 1 : -1; }
+    renderTable(CURRENT);
+  });
+}
+
+async function boot(){
+  wireControls();
+  let loaded = null, err = null;
+  const online = /^https?:$/.test(location.protocol);
+  // Publicado (http/https, ex.: GitHub Pages): lê base_aderencia.xlsx da mesma pasta, ao vivo.
+  if (online){
+    try { loaded = await loadFromXlsx(); } catch (e) { err = e; }
+  }
+  if (loaded){
+    showLoadStatus('');
+    setData(loaded.rows, loaded.info);
+    return;
+  }
+  setData(EMBEDDED, {source:'embedded'});
+  if (err) showLoadStatus('Não foi possível ler base_aderencia.xlsx (' + err.message + '). Exibindo os dados embutidos de ' + META.gerado + '. Confira se a planilha está na mesma pasta deste HTML ou selecione o arquivo.');
+  else if (!online) showLoadStatus('Você abriu o HTML direto do computador, e o navegador não permite ler o base_aderencia.xlsx automaticamente. Selecione o arquivo para carregar os dados atuais ou publique no GitHub Pages, onde a leitura é automática. Por enquanto: dados embutidos de ' + META.gerado + '.');
+}
+boot();
+})();
+</script>
+</body>
+</html>

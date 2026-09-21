@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Estoque — Kanban de Reposição</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          heading: ['Sora', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
+        },
+        colors: {
+          darkBg: '#0b0918', cardBg: '#16122b',
+          verde: '#8fd94b', amarelo: '#ffd84d', vermelho: '#ff5a4f', acimaMax: '#4aa8ff'
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(30px,-40px) scale(1.08);} 66%{transform:translate(-20px,25px) scale(0.95);} }
+  @keyframes fadeUp { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+  .fade-up{ animation: fadeUp .6s ease both; }
+  .orb{ position:fixed; border-radius:9999px; filter:blur(90px); opacity:.14; z-index:-1; pointer-events:none; }
+  .orb-1{ width:520px; height:520px; background:#9b7bff; top:-10%; left:-6%; animation: float 26s ease-in-out infinite; }
+  .orb-2{ width:480px; height:480px; background:#e879f9; top:-5%; right:-8%; animation: float 30s ease-in-out infinite reverse; }
+  .orb-3{ width:420px; height:420px; background:#4aa8ff; bottom:-12%; left:35%; animation: float 22s ease-in-out infinite; }
+  body{ background-color:#0b0918; background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(155,123,255,0.16), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,121,249,0.09), transparent); color:#f5f2ff; background-attachment:fixed; overflow-x:hidden; }
+  .card{ background-color:#16122b; border:1px solid rgba(255,255,255,0.07); border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.25); transition: transform .2s ease, box-shadow .2s ease; }
+  .kpi-card{ cursor:pointer; }
+  .kpi-card:hover{ transform: translateY(-3px); box-shadow:0 10px 32px rgba(0,0,0,.35); }
+  .kpi-card.active{ box-shadow: 0 0 0 2px var(--ring, #9b7bff) inset, 0 10px 32px rgba(0,0,0,.35); }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:#0b0918; }
+  ::-webkit-scrollbar-thumb{ background:#2b2547; border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover{ background:#3d3660; }
+
+  .search-input{ background-color:#0b0918; border:1px solid rgba(255,255,255,.07); color:#f5f2ff; padding:6px 10px; border-radius:8px; font-size:12px; outline:none; transition:border-color .2s; width:150px; }
+  .search-input:focus{ border-color:#9b7bff; }
+
+  .filter-field{ display:flex; align-items:center; gap:5px; }
+  .filter-field > label{ font-size:10.5px; font-weight:600; color:#7a7499; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; }
+
+  .ms-btn{ width:auto; min-width:78px; background-color:#0b0918; border:1px solid rgba(255,255,255,.07); color:#f5f2ff; font-size:11.5px; border-radius:8px; padding:6px 8px; display:flex; align-items:center; justify-content:space-between; gap:5px; outline:none; transition:border-color .2s, box-shadow .2s; cursor:pointer; }
+  .ms-btn:hover{ border-color: rgba(255,255,255,.18); }
+  .ms-btn.active{ border-color:#9b7bff; box-shadow:0 0 0 3px rgba(155,123,255,.12); }
+  .ms-btn svg{ flex-shrink:0; transition: transform .2s ease; color:#7a7499; }
+  .ms-btn.active svg{ transform: rotate(180deg); color:#9b7bff; }
+  .ms-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; min-width:0; max-width:90px; }
+  [data-ms-wrapper]{ position:relative; z-index:1; }
+  [data-ms-wrapper].ms-active{ z-index:100; }
+  .ms-panel{ position:absolute; top:calc(100% + 8px); left:0; z-index:100; width:100%; min-width:210px; background-color:#16122b; border:1px solid rgba(255,255,255,.08); border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.45); padding:10px; animation: msPop .15s ease; }
+  @keyframes msPop{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
+  .ms-actions{ display:flex; justify-content:space-between; gap:8px; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ms-actions button{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:#9b7bff; background:none; border:none; cursor:pointer; padding:2px 4px; border-radius:4px; }
+  .ms-actions button:hover{ color:#b9a3ff; background: rgba(155,123,255,.08); }
+  .ms-options{ max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:2px; }
+  .ms-option{ display:flex; align-items:center; gap:9px; padding:6px 8px; border-radius:8px; cursor:pointer; font-size:13px; color:#b3acd0; transition:background-color .15s; }
+  .ms-option:hover{ background-color: rgba(255,255,255,.05); }
+  .ms-option input[type=checkbox]{ width:14px; height:14px; accent-color:#9b7bff; cursor:pointer; flex-shrink:0; }
+  .hidden{ display:none; }
+
+  .badge{ display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; }
+  .badge .bdot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  .level-track{ position:relative; width:100%; height:8px; border-radius:6px; background:#0b0918; border:1px solid rgba(255,255,255,.06); overflow:hidden; }
+  .level-fill{ position:absolute; top:0; left:0; bottom:0; border-radius:6px; transition: width .5s ease; }
+  .level-tick{ position:absolute; top:-1px; bottom:-1px; width:1px; background: rgba(255,255,255,.28); }
+
+  th[data-sort]{ cursor:pointer; user-select:none; }
+  th[data-sort]:hover{ color:#f5f2ff; }
+  th .sort-arrow{ display:inline-block; margin-left:4px; opacity:.4; font-size:10px; }
+  th.sorted .sort-arrow{ opacity:1; color:#9b7bff; }
+
+  .btn-ghost{ background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color:#f5f2ff; font-size:11px; font-weight:600; padding:6px 12px; border-radius:8px; cursor:pointer; transition: background .2s, border-color .2s; white-space:nowrap; }
+  .btn-ghost:hover{ background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.16); }
+
+  .nav-pill{ padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; color:#b3acd0; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); transition: background-color .2s, color .2s, border-color .2s; white-space:nowrap; }
+  .nav-pill:hover{ background: rgba(255,255,255,.08); color:#f5f2ff; }
+  .nav-pill.active{ color:#0b0918; background:linear-gradient(135deg,#9b7bff,#e879f9); border-color:transparent; }
+
+  #filePickerContainer { display: none; }
+  .btn-primary { background: linear-gradient(135deg,#9b7bff,#e879f9); color: #0b0918; font-weight: 600; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: opacity 0.2s; border: none; }
+  .btn-primary:hover { opacity: 0.9; }
+</style>
+</head>
+<body class="min-h-screen p-4 md:p-8 font-sans antialiased">
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<nav class="mb-5 flex flex-wrap items-center gap-2 fade-up">
+  <a href="index.html" class="nav-pill">CURVA ABC — INSUMOS</a>
+  <a href="kanban.html" class="nav-pill active">KANBAN DE ESTOQUE</a>
+  <a href="aderencia.html" class="nav-pill">ADERÊNCIA DE PRODUÇÃO</a>
+</nav>
+
+<header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 fade-up">
+  <div>
+    <h1 class="text-3xl font-heading font-bold text-[#f5f2ff] tracking-tight flex items-center gap-3">
+      PAINEL DE ESTOQUE
+    </h1>
+    <p class="text-[#b3acd0] text-sm mt-1 uppercase tracking-[0.15em] font-medium">Controle de Produção · Fábrica de Bebidas</p>
+  </div>
+  
+  <div class="flex items-center gap-3">
+    <div id="filePickerContainer" class="flex items-center gap-2 bg-[#16122b] border border-dashed border-[#ff5a4f] px-4 py-2 rounded-xl">
+      <span class="text-xs text-[#ff5a4f] font-medium mr-2">Erro de leitura. Selecione o CSV:</span>
+      <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+      <button onclick="document.getElementById('csvFileInput').click()" class="btn-primary">Procurar Arquivo</button>
+    </div>
+
+    <div id="lastUpdate" class="flex items-center gap-3 bg-[#16122b] border border-[rgba(255,255,255,0.07)] px-5 py-2.5 rounded-xl font-medium text-sm text-[#b3acd0]">
+      <span style="width:8px;height:8px;border-radius:50%;background:#ffd84d;display:inline-block;"></span>
+      <strong style="color:#f5f2ff">Carregando dados...</strong>
+    </div>
+  </div>
+</header>
+
+<section id="kpiRow" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 fade-up" style="animation-delay:.02s"></section>
+
+<section class="card px-4 py-2.5 mb-6 flex flex-nowrap gap-x-2 items-center sticky top-4 z-40 fade-up" style="animation-delay:.04s">
+  <div class="flex items-center gap-1.5 relative shrink-0">
+    <svg class="text-[#7a7499] flex-shrink-0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <input id="searchInput" type="text" class="search-input" placeholder="Buscar produto, código ou marca...">
+  </div>
+  <div id="filtersHost" class="flex flex-nowrap gap-x-2 items-center shrink-0"></div>
+  <button id="btnReset" class="btn-ghost shrink-0">Limpar</button>
+  <button id="btnExport" class="btn-ghost shrink-0">Exportar CSV</button>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+  <div class="card p-5 fade-up" style="animation-delay:.06s">
+    <p class="text-xs font-bold text-[#b3acd0] uppercase tracking-wider mb-3">Kanban Atual por Local</p>
+    <div class="h-64"><canvas id="chartLocalAtual"></canvas></div>
+  </div>
+  <div class="card p-5 fade-up" style="animation-delay:.08s">
+    <p class="text-xs font-bold text-[#b3acd0] uppercase tracking-wider mb-3">Kanban Futuro por Local</p>
+    <div class="h-64"><canvas id="chartLocalFuturo"></canvas></div>
+  </div>
+  <div class="card p-5 fade-up" style="animation-delay:.1s">
+    <p class="text-xs font-bold text-[#b3acd0] uppercase tracking-wider mb-3">Kanban Atual por Curva ABC</p>
+    <div class="h-64"><canvas id="chartCurvaAbc"></canvas></div>
+  </div>
+</section>
+
+<section class="card p-5 mb-6 fade-up" style="animation-delay:.1s">
+  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+    <p class="text-xs font-bold text-[#b3acd0] uppercase tracking-wider">Nível de Estoque por Produto (Cobertura Atual x Futura)</p>
+    <div class="flex items-center gap-3 text-[11px] text-[#b3acd0]">
+      <span class="flex items-center gap-1.5"><span style="width:8px;height:8px;border-radius:50%;background:#ff5a4f;display:inline-block;"></span>Vermelho</span>
+      <span class="flex items-center gap-1.5"><span style="width:8px;height:8px;border-radius:50%;background:#ffd84d;display:inline-block;"></span>Amarelo</span>
+      <span class="flex items-center gap-1.5"><span style="width:8px;height:8px;border-radius:50%;background:#8fd94b;display:inline-block;"></span>Verde</span>
+      <span class="flex items-center gap-1.5"><span style="width:8px;height:8px;border-radius:50%;background:#4aa8ff;display:inline-block;"></span>Acima do Máximo</span>
+    </div>
+  </div>
+  <p class="text-[11px] text-[#7a7499] mb-1">Um produto por linha (pior local considerado quando há mais de um). Comprimento em dias, cor conforme o status.</p>
+  <div class="flex items-center text-[10px] font-bold text-[#7a7499] uppercase tracking-wider mb-1">
+    <div class="flex-1 text-right pr-1">← Cobertura Atual</div>
+    <div class="w-[180px] shrink-0"></div>
+    <div class="flex-1 pl-1">Cobertura Futura →</div>
+  </div>
+  <div class="flex items-center text-[9px] font-mono text-[#7a7499] mb-2">
+    <div class="flex-1 flex justify-between pr-1"><span>30d</span><span>15d</span><span>0</span></div>
+    <div class="w-[180px] shrink-0"></div>
+    <div class="flex-1 flex justify-between pl-1"><span>0</span><span>15d</span><span>30d</span></div>
+  </div>
+  <div class="h-64 overflow-y-auto">
+    <div id="productChartWrap"></div>
+  </div>
+</section>
+
+<section class="card p-5 fade-up" style="animation-delay:.1s">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm border-collapse relative">
+      <thead class="sticky top-0 bg-[#16122b] z-10 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+        <tr class="text-left text-[#7a7499] text-xs uppercase tracking-wider border-b border-[rgba(255,255,255,0.07)]">
+          <th class="py-3 px-3" data-sort="produto">Produto <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3" data-sort="local">Local <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3" data-sort="categoria">Categoria <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3" data-sort="marca">Marca <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3 text-right" data-sort="estoqueAtual">Estoque Atual <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3 text-right" data-sort="estoqueMaximo">Estoque Máximo <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3 text-right" data-sort="coberturaAtual">Cobertura (dias) <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3 w-40">Nível</th>
+          <th class="py-3 px-3" data-sort="kanbanAtual">Kanban Atual <span class="sort-arrow">↕</span></th>
+          <th class="py-3 px-3">Kanban Futuro</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-2 border-t border-[rgba(255,255,255,0.04)]">
+    <p id="tableInfo" class="text-xs text-[#7a7499]"></p>
+    <div class="flex items-center gap-2">
+      <button id="btnPrev" class="px-3 py-1.5 text-xs font-medium text-[#f5f2ff] bg-white/5 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50">Anterior</button>
+      <span id="pageIndicator" class="text-xs text-[#b3acd0] font-mono"></span>
+      <button id="btnNext" class="px-3 py-1.5 text-xs font-medium text-[#f5f2ff] bg-white/5 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50">Próxima</button>
+    </div>
+  </div>
+</section>
+
+<footer class="text-center text-[11px] text-[#7a7499] mt-6 pb-2">Painel de Reposição · Snapshot único por SKU e Local</footer>
+
+<script>
+let RAW_DATA = [];
+
+const KANBAN_META = {
+  'VERDE':      { color:'#8fd94b', label:'Verde',            order:0 },
+  'AMARELO':    { color:'#ffd84d', label:'Amarelo',          order:1 },
+  'VERMELHO':   { color:'#ff5a4f', label:'Vermelho',         order:2 },
+  'ACIMA MAX':  { color:'#4aa8ff', label:'Acima do Máximo',  order:3 },
+};
+function kanbanMeta(v){ 
+  const val = String(v).trim().toUpperCase();
+  return KANBAN_META[val] || { color:'#7a7499', label:v || '—', order:9 }; 
+}
+
+const FILTERS_CONFIG = [
+  { key:'local',            label:'Local' },
+  { key:'categoria',        label:'Categoria' },
+  { key:'marca',            label:'Marca' },
+  { key:'statusFabricacao', label:'Fabricação' },
+  { key:'kanbanAtual',      label:'Kanban Atual' },
+];
+
+const state = {
+  filters: Object.fromEntries(FILTERS_CONFIG.map(f => [f.key, new Set()])),
+  search: '',
+  sort: { key:'estoqueAtual', dir:'desc' },
+  page: 1,
+};
+const ITEMS_PER_PAGE = 25;
+let filtered = [];
+let charts = {};
+
+const fmtInt = v => Math.round(Number(v)||0).toLocaleString('pt-BR');
+const fmtDec = (v, d=1) => Number(v||0).toLocaleString('pt-BR', { minimumFractionDigits:d, maximumFractionDigits:d });
+
+// A base usa formatação numérica pt-BR: "." como separador de milhar e "," como decimal.
+// Ex.: "25.746" = 25746 | "7,5" = 7.5. Number("25.746") daria 25.746 (errado), por isso
+// precisamos converter explicitamente antes de qualquer cálculo/ordenação/exibição.
+const NUMERIC_FIELDS = ['estoqueAtual','estoqueMaximo','coberturaAtual','coberturaPlanejada','estoqueSeguranca','pontoReposicao'];
+function parseNumberBR(v){
+  if (v === null || v === undefined) return 0;
+  if (typeof v === 'number') return v;
+  let s = String(v).trim();
+  if (s === '') return 0;
+  s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function coerceNumericFields(rows){
+  rows.forEach(r => { NUMERIC_FIELDS.forEach(f => { r[f] = parseNumberBR(r[f]); }); });
+}
+
+function uniqueValues(key) {
+  return [...new Set(RAW_DATA.map(r => {
+    const val = r[key];
+    return (val === null || val === undefined || String(val).trim() === '') ? '(Não informado)' : val;
+  }))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+}
+
+function normKey(r, key) {
+  const v = r[key];
+  return (v === null || v === undefined || String(v).trim() === '') ? '(Não informado)' : v;
+}
+
+function computeKpis(list){
+  const total = list.length;
+  const counts = {};
+  Object.keys(KANBAN_META).forEach(k => counts[k] = 0);
+  list.forEach(r => { 
+    const k = String(r.kanbanAtual).trim().toUpperCase();
+    counts[k] = (counts[k] || 0) + 1; 
+  });
+  return { total, counts };
+}
+
+function renderKpis(){
+  const { total, counts } = computeKpis(RAW_DATA);
+  const host = document.getElementById('kpiRow');
+  const cards = [
+    { key:'__all__', label:'Total monitorado', value: total, color:'#b3acd0' },
+    { key:'VERDE', label:'Nível OK', value: counts['VERDE']||0, color:'#8fd94b' },
+    { key:'AMARELO', label:'Atenção', value: counts['AMARELO']||0, color:'#ffd84d' },
+    { key:'VERMELHO', label:'Crítico', value: counts['VERMELHO']||0, color:'#ff5a4f' },
+    { key:'ACIMA MAX', label:'Acima do Máximo', value: counts['ACIMA MAX']||0, color:'#4aa8ff' },
+  ];
+  host.innerHTML = cards.map(c => `
+    <div class="card kpi-card p-4" data-kpi="${c.key}" style="--ring:${c.color}">
+      <div class="flex items-center gap-2 mb-2">
+        <span style="width:9px;height:9px;border-radius:50%;background:${c.color};display:inline-block;"></span>
+        <span class="text-xs text-[#b3acd0] uppercase tracking-wider font-semibold">${c.label}</span>
+      </div>
+      <div class="text-2xl font-heading font-bold" style="color:${c.color}">${c.value}</div>
+      <div class="text-[11px] text-[#7a7499] mt-0.5">${total ? ((c.value/total)*100).toFixed(1) : '0.0'}% do total</div>
+    </div>
+  `).join('');
+
+  host.querySelectorAll('[data-kpi]').forEach(el => {
+    el.addEventListener('click', () => {
+      const key = el.dataset.kpi;
+      if (key === '__all__'){
+        state.filters.kanbanAtual.clear();
+      } else {
+        const set = state.filters.kanbanAtual;
+        const exactMatch = uniqueValues('kanbanAtual').find(v => String(v).toUpperCase() === key);
+        if(exactMatch) {
+            if (set.has(exactMatch) && set.size === 1) set.clear();
+            else { set.clear(); set.add(exactMatch); }
+        }
+      }
+      syncMultiselectUI('kanbanAtual');
+      state.page = 1;
+      applyAndRender();
+    });
+  });
+  highlightActiveKpi();
+}
+
+function highlightActiveKpi(){
+  const active = state.filters.kanbanAtual;
+  document.querySelectorAll('[data-kpi]').forEach(el => {
+    const key = el.dataset.kpi;
+    const isActiveMatch = Array.from(active).some(v => String(v).toUpperCase() === key);
+    const isActive = (key === '__all__' && active.size === 0) || (active.size > 0 && isActiveMatch);
+    el.classList.toggle('active', isActive);
+  });
+}
+
+function buildFilters(){
+  const host = document.getElementById('filtersHost');
+  host.innerHTML = '';
+  FILTERS_CONFIG.forEach(cfg => {
+    const options = uniqueValues(cfg.key);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'filter-field relative';
+    wrapper.setAttribute('data-ms-wrapper', cfg.key);
+    wrapper.innerHTML = `
+      <label>${cfg.label}</label>
+      <button type="button" class="ms-btn" data-ms-toggle="${cfg.key}">
+        <span class="ms-label" data-ms-label="${cfg.key}">Todos</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="ms-panel hidden" data-ms-panel="${cfg.key}">
+        <div class="ms-actions">
+          <button type="button" data-action="all">Selecionar todos</button>
+          <button type="button" data-action="none">Limpar</button>
+        </div>
+        <div class="ms-options">
+          ${options.map(o => `
+            <label class="ms-option">
+              <input type="checkbox" data-ms-option="${cfg.key}" value="${o}">
+              <span>${o}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    host.appendChild(wrapper);
+  });
+
+  document.querySelectorAll('[data-ms-toggle]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.msToggle;
+      const isOpen = !document.querySelector(`[data-ms-panel="${key}"]`).classList.contains('hidden');
+      closeAllPanels();
+      if (!isOpen){
+        document.querySelector(`[data-ms-panel="${key}"]`).classList.remove('hidden');
+        btn.classList.add('active');
+        btn.closest('[data-ms-wrapper]').classList.add('ms-active');
+      }
+    });
+  });
+  document.addEventListener('click', closeAllPanels);
+
+  document.querySelectorAll('[data-ms-option]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const key = cb.dataset.msOption;
+      if (cb.checked) state.filters[key].add(cb.value);
+      else state.filters[key].delete(cb.value);
+      syncMultiselectUI(key);
+      state.page = 1;
+      applyAndRender();
+    });
+  });
+
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.closest('[data-ms-panel]').dataset.msPanel;
+      const boxes = document.querySelectorAll(`[data-ms-option="${key}"]`);
+      if (btn.dataset.action === 'all'){
+        boxes.forEach(b => { b.checked = true; state.filters[key].add(b.value); });
+      } else {
+        boxes.forEach(b => { b.checked = false; });
+        state.filters[key].clear();
+      }
+      syncMultiselectUI(key);
+      state.page = 1;
+      applyAndRender();
+    });
+  });
+}
+
+function closeAllPanels(){
+  document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.ms-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('[data-ms-wrapper]').forEach(w => w.classList.remove('ms-active'));
+}
+
+function syncMultiselectUI(key){
+  const set = state.filters[key];
+  const label = document.querySelector(`[data-ms-label="${key}"]`);
+  document.querySelectorAll(`[data-ms-option="${key}"]`).forEach(cb => { cb.checked = set.has(cb.value); });
+  if (set.size === 0) label.textContent = 'Todos';
+  else if (set.size === 1) label.textContent = [...set][0];
+  else label.textContent = `${set.size} selecionados`;
+  if (key === 'kanbanAtual') highlightActiveKpi();
+}
+
+function applyFilters(){
+  const term = state.search.trim().toLowerCase();
+  filtered = RAW_DATA.filter(r => {
+    for (const cfg of FILTERS_CONFIG){
+      const set = state.filters[cfg.key];
+      if (set.size > 0 && !set.has(normKey(r, cfg.key))) return false;
+    }
+    if (term){
+      const hay = `${r.produto} ${r.codigo} ${r.marca}`.toLowerCase();
+      if (!hay.includes(term)) return false;
+    }
+    return true;
+  });
+  const { key, dir } = state.sort;
+  filtered.sort((a,b) => {
+    let va = a[key], vb = b[key];
+    if (typeof va === 'string'){ va = va || ''; vb = vb || ''; return dir === 'asc' ? va.localeCompare(vb,'pt-BR') : vb.localeCompare(va,'pt-BR'); }
+    va = Number(va) || 0; vb = Number(vb) || 0;
+    return dir === 'asc' ? va - vb : vb - va;
+  });
+}
+
+function levelBarHtml(r){
+  const maxScale = Math.max(r.estoqueMaximo || 0, r.estoqueAtual || 0, 1) * 1.02;
+  const pct = v => Math.max(0, Math.min(100, ((Number(v)||0) / maxScale) * 100));
+  const fillPct = Math.min(100, ((Number(r.estoqueAtual)||0) / maxScale) * 100);
+  const color = kanbanMeta(r.kanbanAtual).color;
+  const overflow = (Number(r.estoqueAtual)||0) > (Number(r.estoqueMaximo)||0);
+  return `
+    <div class="level-track" title="Segurança: ${fmtInt(r.estoqueSeguranca||0)} · Reposição: ${fmtInt(r.pontoReposicao||0)} · Máximo: ${fmtInt(r.estoqueMaximo||0)} · Atual: ${fmtInt(r.estoqueAtual||0)}">
+      <div class="level-fill" style="width:${fillPct}%; background:${color};"></div>
+      <div class="level-tick" style="left:${pct(r.estoqueSeguranca)}%"></div>
+      <div class="level-tick" style="left:${pct(r.pontoReposicao)}%"></div>
+      <div class="level-tick" style="left:${pct(r.estoqueMaximo)}%"></div>
+    </div>
+    <div class="text-[10px] text-[#7a7499] mt-1 font-mono">${r.estoqueMaximo ? (((Number(r.estoqueAtual)||0)/(Number(r.estoqueMaximo)||1))*100).toFixed(0) : '0'}% do máx.${overflow ? ' · acima do máx.' : ''}</div>
+  `;
+}
+
+function badgeHtml(value){
+  const m = kanbanMeta(value);
+  return `<span class="badge" style="background:${m.color}22; color:${m.color};"><span class="bdot" style="background:${m.color}"></span>${m.label}</span>`;
+}
+
+function renderTable(){
+  const start = (state.page - 1) * ITEMS_PER_PAGE;
+  const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
+  const tbody = document.getElementById('tableBody');
+
+  if (pageItems.length === 0){
+    tbody.innerHTML = `<tr><td colspan="10" class="py-8 text-center text-[#7a7499]">Nenhum item encontrado com os filtros atuais.</td></tr>`;
+  } else {
+    tbody.innerHTML = pageItems.map(r => `
+      <tr class="border-b border-[rgba(255,255,255,0.04)] hover:bg-white/5 transition-colors">
+        <td class="py-3 px-3">
+          <div class="font-medium text-[#f5f2ff]">${r.produto || ''}</div>
+          <div class="text-[11px] text-[#7a7499] font-mono">${r.codigo || ''}</div>
+        </td>
+        <td class="py-3 px-3 text-[#b3acd0] font-mono text-xs">${r.local || ''}</td>
+        <td class="py-3 px-3 text-[#b3acd0] text-xs">${r.categoria || ''}</td>
+        <td class="py-3 px-3 text-[#b3acd0] text-xs">${r.marca || ''}</td>
+        <td class="py-3 px-3 text-right font-mono text-[#f5f2ff]">${fmtInt(r.estoqueAtual || 0)}</td>
+        <td class="py-3 px-3 text-right font-mono text-[#b3acd0]">${fmtInt(r.estoqueMaximo || 0)}</td>
+        <td class="py-3 px-3 text-right font-mono text-[#b3acd0]">${fmtDec(r.coberturaAtual || 0)}</td>
+        <td class="py-3 px-3">${levelBarHtml(r)}</td>
+        <td class="py-3 px-3">${badgeHtml(r.kanbanAtual)}</td>
+        <td class="py-3 px-3 opacity-70">${badgeHtml(r.kanbanFuturo)}</td>
+      </tr>
+    `).join('');
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  document.getElementById('tableInfo').textContent = `Mostrando ${pageItems.length ? start+1 : 0}–${Math.min(start+ITEMS_PER_PAGE, filtered.length)} de ${filtered.length} itens`;
+  document.getElementById('pageIndicator').textContent = `Página ${state.page} de ${totalPages}`;
+  document.getElementById('btnPrev').disabled = state.page <= 1;
+  document.getElementById('btnNext').disabled = state.page >= totalPages;
+
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.sort === state.sort.key);
+    th.querySelector('.sort-arrow').textContent = th.dataset.sort === state.sort.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
+  });
+}
+
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (state.sort.key === key) state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+    else state.sort = { key, dir: 'desc' };
+    applyAndRender();
+  });
+});
+document.getElementById('btnPrev').addEventListener('click', () => { if (state.page > 1){ state.page--; renderTable(); } });
+document.getElementById('btnNext').addEventListener('click', () => {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  if (state.page < totalPages){ state.page++; renderTable(); }
+});
+
+const SEVERITY = { 'VERMELHO': 3, 'AMARELO': 2, 'ACIMA MAX': 1, 'VERDE': 0 };
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function getProductLevels(){
+  const map = new Map();
+  filtered.forEach(r => {
+    const s = String(r.kanbanAtual).trim().toUpperCase();
+    const sevAtual = SEVERITY[s] ?? 0;
+    const cur = map.get(r.produto);
+    if (!cur || sevAtual > (SEVERITY[String(cur.kanbanAtual).trim().toUpperCase()] ?? 0)) map.set(r.produto, r);
+  });
+  return [...map.values()]
+    .sort((a, b) => (SEVERITY[String(b.kanbanAtual).trim().toUpperCase()] ?? 0) - (SEVERITY[String(a.kanbanAtual).trim().toUpperCase()] ?? 0) || String(a.produto||'').localeCompare(String(b.produto||''), 'pt-BR'));
+}
+
+function renderProductLevelsChart(){
+  const products = getProductLevels();
+  const host = document.getElementById('productChartWrap');
+  if (!products.length){ host.innerHTML = `<p class="text-xs text-[#7a7499] py-6 text-center">Nenhum produto para os filtros selecionados.</p>`; return; }
+
+  const maxVal = 30;
+  host.innerHTML = products.map(p => {
+    const mA = kanbanMeta(p.kanbanAtual);
+    const mF = kanbanMeta(p.kanbanFuturo);
+    const coA = Number(p.coberturaAtual) || 0;
+    const coF = Number(p.coberturaPlanejada || p.coberturaFutura) || 0;
+    const pctA = Math.min(100, Math.max(2, (coA / maxVal) * 100));
+    const pctF = Math.min(100, Math.max(2, (coF / maxVal) * 100));
+    const tipA = `Cobertura Atual: ${fmtDec(coA, 1)}d · ${mA.label}`;
+    const tipF = `Cobertura Futura: ${fmtDec(coF, 1)}d · ${mF.label}`;
+    const prodName = String(p.produto||'').trim();
+    return `
+      <div class="flex items-center py-1.5 border-b border-[rgba(255,255,255,0.04)] last:border-0">
+        <div class="flex-1 flex items-center justify-end gap-1.5" title="${escapeHtml(tipA)}">
+          <span class="text-[10px] font-mono text-[#b3acd0] whitespace-nowrap">${fmtDec(coA, 1)}d</span>
+          <div style="width:${pctA}%;height:12px;border-radius:3px 0 0 3px;background:${mA.color};min-width:3px;"></div>
+        </div>
+        <div class="w-[180px] shrink-0 text-center px-2 text-[11px] font-semibold text-[#f5f2ff] truncate" title="${escapeHtml(prodName)}">${escapeHtml(prodName.toUpperCase())}</div>
+        <div class="flex-1 flex items-center gap-1.5" title="${escapeHtml(tipF)}">
+          <div style="width:${pctF}%;height:12px;border-radius:0 3px 3px 0;background:${mF.color};min-width:3px;"></div>
+          <span class="text-[10px] font-mono text-[#b3acd0] whitespace-nowrap">${fmtDec(coF, 1)}d</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderCharts(){
+  renderProductLevelsChart();
+
+  const locais = [...new Set(filtered.map(r => r.local))].sort();
+  const curvas = [...new Set(filtered.map(r => normKey(r, 'curvaAbc')))].sort((a,b) => String(a).localeCompare(String(b), 'pt-BR'));
+  const statusKeys = Object.keys(KANBAN_META);
+
+  function renderStackedBarChart(canvasId, chartRefKey, groups, groupField, statusField){
+    const ctx = document.getElementById(canvasId);
+    if (charts[chartRefKey]) charts[chartRefKey].destroy();
+    charts[chartRefKey] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: groups,
+        datasets: statusKeys.map(k => ({
+          label: KANBAN_META[k].label,
+          data: groups.map(g => filtered.filter(r => normKey(r, groupField) === g && String(r[statusField]).trim().toUpperCase() === k).length),
+          backgroundColor: KANBAN_META[k].color,
+          borderRadius: 4,
+        }))
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        scales: { x:{ stacked:true, ticks:{ color:'#b3acd0' }, grid:{ display:false } }, y:{ stacked:true, beginAtZero:true, ticks:{ color:'#b3acd0' }, grid:{ color:'rgba(255,255,255,.05)' } } },
+        plugins:{ legend:{ position:'bottom', labels:{ color:'#b3acd0', boxWidth:10, padding:12, font:{ size:11 } } } }
+      }
+    });
+  }
+
+  renderStackedBarChart('chartLocalAtual', 'localAtual', locais, 'local', 'kanbanAtual');
+  renderStackedBarChart('chartLocalFuturo', 'localFuturo', locais, 'local', 'kanbanFuturo');
+  renderStackedBarChart('chartCurvaAbc', 'curvaAbc', curvas, 'curvaAbc', 'kanbanAtual');
+}
+
+document.getElementById('btnExport').addEventListener('click', () => {
+  const headers = ['Produto','Codigo','Local','Categoria','Marca','Estoque Atual','Estoque Maximo','Cobertura Atual (dias)','Kanban Atual','Kanban Futuro'];
+  const rows = filtered.map(r => [r.produto, r.codigo, r.local, r.categoria, r.marca, r.estoqueAtual, r.estoqueMaximo, r.coberturaAtual, r.kanbanAtual, r.kanbanFuturo]);
+  const csv = [headers, ...rows].map(row => row.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(';')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'estoque_filtrado.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  FILTERS_CONFIG.forEach(cfg => { state.filters[cfg.key].clear(); syncMultiselectUI(cfg.key); });
+  state.search = '';
+  document.getElementById('searchInput').value = '';
+  state.page = 1;
+  applyAndRender();
+});
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  state.search = e.target.value;
+  state.page = 1;
+  applyAndRender();
+});
+
+function applyAndRender(){
+  applyFilters();
+  renderTable();
+  renderCharts();
+  highlightActiveKpi();
+}
+
+function normalizeHeaderName(h) {
+  let norm = h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (norm === 'data') return 'data';
+  if (norm.includes('produto') || norm.includes('sku')) return 'produto';
+  if (norm.includes('codigo') || norm.includes('cod')) return 'codigo';
+  if (norm.includes('local') || norm.includes('armazem')) return 'local';
+  if (norm.includes('categoria') || norm.includes('familia')) return 'categoria';
+  if (norm.includes('marca')) return 'marca';
+  if (norm.includes('estoque atual') || norm.includes('qtde atual')) return 'estoqueAtual';
+  if (norm.includes('estoque maximo') || norm.includes('qtde maxima') || norm === 'maximo') return 'estoqueMaximo';
+  if (norm.includes('cobertura atual') || norm === 'cobertura') return 'coberturaAtual';
+  // Aceita tanto "KANBAN" quanto a grafia usada na base "KAMBAN"
+  if (norm.includes('kanban atual') || norm.includes('kamban atual') || norm === 'status atual') return 'kanbanAtual';
+  if (norm.includes('kanban futuro') || norm.includes('kamban futuro') || norm === 'status futuro') return 'kanbanFuturo';
+  if (norm.includes('seguranca') || norm === 'estoque minimo') return 'estoqueSeguranca';
+  if (norm.includes('reposicao') || norm.includes('ponto')) return 'pontoReposicao';
+  if (norm.includes('planejada') || norm.includes('futura')) return 'coberturaPlanejada';
+  if (norm.includes('status fabricacao')) return 'statusFabricacao';
+  if (norm === 'curva abc') return 'curvaAbc';
+  return h;
+}
+
+function processCSVData(csvString) {
+  Papa.parse(csvString, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: function(h) {
+      return normalizeHeaderName(h);
+    },
+    complete: function(results) {
+      RAW_DATA = results.data.filter(r => Object.values(r).some(v => String(v||'').trim() !== ''));
+      coerceNumericFields(RAW_DATA);
+      const datas = RAW_DATA.map(r => r.data).filter(Boolean);
+      const dataRef = datas.length ? datas[datas.length - 1] : null;
+      document.getElementById('lastUpdate').innerHTML = `
+        <span style="width:8px;height:8px;border-radius:50%;background:#8fd94b;display:inline-block;"></span>
+        Base carregada${dataRef ? ` &middot; ref. ${dataRef}` : ''} &nbsp;&middot;&nbsp; ${RAW_DATA.length} itens monitorados
+      `;
+      document.getElementById('filePickerContainer').style.display = 'none';
+      renderKpis();
+      buildFilters();
+      applyAndRender();
+    },
+    error: function(err) {
+      console.error(err);
+      showError("Erro ao processar dados do CSV.");
+    }
+  });
+}
+
+function showError(msg) {
+  document.getElementById('lastUpdate').innerHTML = `<span style="color:#ff5a4f; font-weight:bold;">${msg}</span>`;
+  document.getElementById('filePickerContainer').style.display = 'flex';
+}
+
+document.getElementById('csvFileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    processCSVData(event.target.result);
+  };
+  reader.readAsText(file);
+});
+
+async function loadData() {
+  try {
+    let response = await fetch('base_kamban.csv');
+    if (!response.ok) {
+        response = await fetch('base_kamban.csv?t=' + new Date().getTime());
+    }
+    if (!response.ok) throw new Error('O arquivo não foi encontrado na raiz do projeto.');
+    
+    const csvText = await response.text();
+    processCSVData(csvText);
+    
+  } catch (error) {
+    console.warn('Falha na tentativa de ler o CSV:', error);
+    showError("Erro: Não foi possível ler o arquivo base_kamban.csv.");
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>

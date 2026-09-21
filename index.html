@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Curva ABC - Orla Bebidas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Sora', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    colors: {
+                        darkBg: '#0b0918', cardBg: '#16122b',
+                        accentBrand: '#9b7bff', accentOk: '#8fd94b', accentBlue: '#4aa8ff',
+                        accentOrange: '#ff9a3d', accentPurple: '#e879f9',
+                        accentRed: '#ff5a4f'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -40px) scale(1.08); }
+            66% { transform: translate(-20px, 25px) scale(0.95); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.6s ease both; }
+
+        .orb { position: fixed; border-radius: 9999px; filter: blur(90px); opacity: 0.16; z-index: -1; pointer-events: none; }
+        .orb-1 { width: 500px; height: 500px; background: #9b7bff; top: -10%; left: -5%; animation: float 26s ease-in-out infinite; }
+        .orb-2 { width: 480px; height: 480px; background: #e879f9; top: -5%; right: -8%; animation: float 30s ease-in-out infinite reverse; }
+        .orb-3 { width: 420px; height: 420px; background: #4aa8ff; bottom: -12%; left: 35%; animation: float 22s ease-in-out infinite; }
+
+        body {
+            background-color: #0b0918;
+            background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(155,123,255,0.16), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,121,249,0.09), transparent);
+            color: #f5f2ff;
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+        .card { 
+            background-color: #16122b; 
+            border: 1px solid rgba(255,255,255,0.07); 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,0.35); background-color: #1c1736; }
+        .glow-text { text-shadow: 0 0 12px rgba(155,123,255,0.35); }
+        .card-divider { border-top: 1px solid rgba(255,255,255,0.04); }
+
+        .kpi-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 3px;
+        }
+        .icon-badge {
+            width: 30px; height: 30px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .icon-badge svg { width: 15px; height: 15px; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0918; }
+        ::-webkit-scrollbar-thumb { background: #2b2547; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3d3660; }
+        
+        .search-input {
+            background-color: #0b0918; border: 1px solid rgba(255,255,255,0.07); color: #f5f2ff;
+            padding: 8px 16px 8px 40px; border-radius: 10px; font-size: 14px;
+            outline: none; transition: border-color 0.2s; width: 100%; max-width: 300px;
+        }
+        .search-input:focus { border-color: #9b7bff; }
+        
+        /* Spinner de carregamento */
+        .loader {
+            border: 3px solid rgba(155,123,255,0.2); border-top: 3px solid #9b7bff;
+            border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ===== Filtro multi-seleção ===== */
+        .multiselect-btn {
+            width: 100%; background-color: #0b0918; border: 1px solid rgba(255,255,255,0.07); color: #f5f2ff;
+            font-size: 14px; border-radius: 10px; padding: 10px 12px;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s; cursor: pointer;
+        }
+        .multiselect-btn:hover { border-color: rgba(255,255,255,0.15); }
+        .multiselect-btn.active { border-color: #9b7bff; box-shadow: 0 0 0 3px rgba(155,123,255,0.12); }
+        .multiselect-btn span.ms-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+        .multiselect-btn svg { flex-shrink: 0; transition: transform 0.2s ease; color: #7a7499; }
+        .multiselect-btn.active svg { transform: rotate(180deg); color: #9b7bff; }
+
+        [data-ms-wrapper] { z-index: 1; }
+        [data-ms-wrapper].ms-active { z-index: 100; }
+
+        .multiselect-panel {
+            position: absolute; top: calc(100% + 8px); left: 0; z-index: 100; width: 100%; min-width: 220px;
+            background-color: #16122b; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(155,123,255,0.04);
+            padding: 10px; animation: msPop 0.15s ease;
+        }
+        @keyframes msPop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        .multiselect-actions {
+            display: flex; justify-content: space-between; gap: 8px; padding-bottom: 8px; margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .multiselect-actions button {
+            font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+            color: #9b7bff; background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+        }
+        .multiselect-actions button:hover { color: #b9a3ff; background: rgba(155,123,255,0.08); }
+        .multiselect-options { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+        .ms-option {
+            display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px;
+            cursor: pointer; font-size: 13px; color: #b3acd0; transition: background-color 0.15s;
+        }
+        .ms-option:hover { background-color: rgba(255,255,255,0.05); }
+        .ms-option input[type="checkbox"] {
+            width: 15px; height: 15px; accent-color: #9b7bff; cursor: pointer; flex-shrink: 0;
+        }
+        .hidden { display: none; }
+
+        /* ===== Navegação entre relatórios ===== */
+        .nav-pill {
+            padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+            text-decoration: none; color: #b3acd0; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07); transition: background-color .2s, color .2s, border-color .2s;
+            white-space: nowrap;
+        }
+        .nav-pill:hover { background: rgba(255,255,255,0.08); color: #f5f2ff; }
+        .nav-pill.active { color: #0b0918; background:linear-gradient(135deg,#9b7bff,#e879f9); border-color:transparent; }
+
+        /* ===== Exportação em PDF (download direto) ===== */
+        /* Enquanto o PDF é gerado, a página fica "limpa": sem orbs, sem painel flutuante,
+           sem sombras/animações e sem elementos fixos, para a captura sair idêntica ao relatório. */
+        body.exportando-pdf .orb,
+        body.exportando-pdf #painelFixoToggles,
+        body.exportando-pdf .multiselect-panel { display: none !important; }
+        body.exportando-pdf [class*="blur-"] { display: none !important; }
+        body.exportando-pdf * { animation: none !important; transition: none !important; }
+        body.exportando-pdf .card { box-shadow: none !important; transform: none !important; }
+        body.exportando-pdf .sticky { position: static !important; }
+
+        #pdfOverlay {
+            position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 14px;
+            background: rgba(11,9,24,0.82); backdrop-filter: blur(2px);
+            color: #f5f2ff; font-size: 14px; font-weight: 500; letter-spacing: 0.02em;
+        }
+        #pdfOverlay .loader { width: 34px; height: 34px; border-width: 4px; }
+
+        /* Impressão nativa continua disponível como plano B (Ctrl+P). */
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            html, body { background: #0b0918 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+            .orb, #painelFixoToggles, nav.mb-5, .search-wrap, .multiselect-panel,
+            #btnPrev, #btnNext, #pageIndicator, .card:hover { display: none !important; }
+            * { animation: none !important; transition: none !important; box-shadow: none !important; }
+            .card { break-inside: avoid; page-break-inside: avoid; border: 1px solid rgba(255,255,255,0.12) !important; transform: none !important; }
+            section { break-inside: avoid-page; }
+            canvas { max-width: 100% !important; }
+            #tabelaRanking tr { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 font-sans antialiased">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- PAINEL FIXO DE TOGGLES + EXPORTAR PDF: permanece visível mesmo ao rolar a página -->
+    <div id="painelFixoToggles" class="fixed bottom-6 right-6 z-[60] flex flex-col sm:flex-row items-end sm:items-center gap-3 fade-up">
+        <label class="flex items-center gap-2 cursor-pointer bg-[#16122b]/95 backdrop-blur-sm border border-[#9b7bff]/40 px-4 py-2.5 rounded-xl text-sm font-medium text-[#f5f2ff] hover:border-[#9b7bff] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_15px_rgba(155,123,255,0.15)]">
+            <input type="checkbox" id="toggleFaturamento" class="w-4 h-4 accent-accentBrand cursor-pointer" checked>
+            FATURAMENTO
+        </label>
+
+        <label class="flex items-center gap-2 cursor-pointer bg-[#16122b]/95 backdrop-blur-sm border border-[#ffd84d]/40 px-4 py-2.5 rounded-xl text-sm font-medium text-[#f5f2ff] hover:border-[#ffd84d] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_15px_rgba(255,216,77,0.15)]">
+            <input type="checkbox" id="toggleSOP" class="w-4 h-4 cursor-pointer" style="accent-color:#ffd84d" checked>
+            S&amp;OP
+        </label>
+
+        <button type="button" id="btnExportarPdf" title="Gera e baixa o PDF do relatório completo, com todos os gráficos como aparecem na tela" class="flex items-center gap-2 cursor-pointer bg-[#16122b]/95 backdrop-blur-sm border border-[#4aa8ff]/40 px-4 py-2.5 rounded-xl text-sm font-medium text-[#f5f2ff] hover:border-[#4aa8ff] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_15px_rgba(74,168,255,0.15)] disabled:opacity-60 disabled:cursor-wait">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#4aa8ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span id="btnExportarPdfLabel">EXPORTAR PDF</span>
+        </button>
+    </div>
+
+    <div id="reportCaptureArea">
+    <nav class="mb-5 flex flex-wrap items-center gap-2 fade-up">
+        <a href="index.html" class="nav-pill active">CURVA ABC - INSUMOS</a>
+        <a href="kanban.html" class="nav-pill">KANBAN DE ESTOQUE</a>
+        <a href="aderencia.html" class="nav-pill">ADERÊNCIA DE PRODUÇÃO</a>
+    </nav>
+
+    <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 fade-up">
+        <div>
+            <h1 class="text-3xl font-heading font-bold text-[#f5f2ff] tracking-tight glow-text flex items-center gap-3">
+                <svg viewBox="0 0 40 40" class="h-9 w-9 shrink-0" role="img" aria-label="Logo Orla Bebidas" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="orlaGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9b7bff"/><stop offset="1" stop-color="#e879f9"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#orlaGrad)"/><path d="M9 17c3.5-4 7-4 10.5 0s7 4 10.5 0" fill="none" stroke="#0b0918" stroke-width="3" stroke-linecap="round"/><path d="M9 25c3.5-4 7-4 10.5 0s7 4 10.5 0" fill="none" stroke="#0b0918" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/></svg>
+                RELATÓRIO CURVA ABC – ORLA BEBIDAS
+            </h1>
+            <p class="text-[#b3acd0] text-sm mt-1 uppercase tracking-[0.15em] font-medium">Análise Executiva de Compras e Gestão de Insumos</p>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-4">
+            <div id="statusCarregamento" class="flex items-center gap-3 bg-[#16122b] border border-[rgba(255,255,255,0.07)] px-5 py-2.5 rounded-xl font-medium text-sm text-[#b3acd0]">
+                <div class="loader" id="loaderIcon"></div>
+                <span id="statusTexto">Sincronizando CSVs...</span>
+            </div>
+        </div>
+    </header>
+
+    <section class="card p-5 mb-8 flex flex-wrap gap-5 items-end sticky top-4 z-40 fade-up" style="animation-delay:0.02s">
+        <div class="flex-1 min-w-[160px] relative" data-ms-wrapper="Ano">
+            <label class="block text-xs font-bold text-[#b3acd0] mb-1.5 uppercase tracking-wider">Ano</label>
+            <button type="button" id="btnFilterAno" class="multiselect-btn">
+                <span class="ms-label" id="labelFilterAno">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="panelFilterAno" class="multiselect-panel hidden">
+                <div class="multiselect-actions">
+                    <button type="button" data-action="all">Selecionar todos</button>
+                    <button type="button" data-action="none">Limpar</button>
+                </div>
+                <div id="optionsFilterAno" class="multiselect-options"></div>
+            </div>
+        </div>
+        <div class="flex-1 min-w-[160px] relative" data-ms-wrapper="Mes">
+            <label class="block text-xs font-bold text-[#b3acd0] mb-1.5 uppercase tracking-wider">Mês</label>
+            <button type="button" id="btnFilterMes" class="multiselect-btn">
+                <span class="ms-label" id="labelFilterMes">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="panelFilterMes" class="multiselect-panel hidden">
+                <div class="multiselect-actions">
+                    <button type="button" data-action="all">Selecionar todos</button>
+                    <button type="button" data-action="none">Limpar</button>
+                </div>
+                <div id="optionsFilterMes" class="multiselect-options"></div>
+            </div>
+        </div>
+        <div class="flex-1 min-w-[160px] relative" data-ms-wrapper="Filial">
+            <label class="block text-xs font-bold text-[#b3acd0] mb-1.5 uppercase tracking-wider">Filial</label>
+            <button type="button" id="btnFilterFilial" class="multiselect-btn">
+                <span class="ms-label" id="labelFilterFilial">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="panelFilterFilial" class="multiselect-panel hidden">
+                <div class="multiselect-actions">
+                    <button type="button" data-action="all">Selecionar todos</button>
+                    <button type="button" data-action="none">Limpar</button>
+                </div>
+                <div id="optionsFilterFilial" class="multiselect-options"></div>
+            </div>
+        </div>
+        <div class="flex-1 min-w-[160px] relative" data-ms-wrapper="Grupo">
+            <label class="block text-xs font-bold text-[#b3acd0] mb-1.5 uppercase tracking-wider">Grupo</label>
+            <button type="button" id="btnFilterGrupo" class="multiselect-btn">
+                <span class="ms-label" id="labelFilterGrupo">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="panelFilterGrupo" class="multiselect-panel hidden">
+                <div class="multiselect-actions">
+                    <button type="button" data-action="all">Selecionar todos</button>
+                    <button type="button" data-action="none">Limpar</button>
+                </div>
+                <div id="optionsFilterGrupo" class="multiselect-options"></div>
+            </div>
+        </div>
+        <div class="flex-1 min-w-[160px] relative" data-ms-wrapper="Classe">
+            <label class="block text-xs font-bold text-[#b3acd0] mb-1.5 uppercase tracking-wider">Classe</label>
+            <button type="button" id="btnFilterClasse" class="multiselect-btn">
+                <span class="ms-label" id="labelFilterClasse">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="panelFilterClasse" class="multiselect-panel hidden">
+                <div class="multiselect-actions">
+                    <button type="button" data-action="all">Selecionar todos</button>
+                    <button type="button" data-action="none">Limpar</button>
+                </div>
+                <div id="optionsFilterClasse" class="multiselect-options"></div>
+            </div>
+        </div>
+        <div class="flex-1 min-w-[160px] relative" data-ms-wrapper="Insumo">
+            <label class="block text-xs font-bold text-[#b3acd0] mb-1.5 uppercase tracking-wider">Descrição do Insumo</label>
+            <button type="button" id="btnFilterInsumo" class="multiselect-btn">
+                <span class="ms-label" id="labelFilterInsumo">Todos</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="panelFilterInsumo" class="multiselect-panel hidden">
+                <div class="multiselect-actions">
+                    <button type="button" data-action="all">Selecionar todos</button>
+                    <button type="button" data-action="none">Limpar</button>
+                </div>
+                <input type="text" id="searchOptionsInsumo" placeholder="Buscar insumo..." class="w-full mb-2 bg-[#0b0918] border border-[rgba(255,255,255,0.07)] text-[#f5f2ff] text-xs rounded-lg px-3 py-2 outline-none focus:border-accentBrand" autocomplete="off">
+                <div id="optionsFilterInsumo" class="multiselect-options"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCOS DOS KPIs COM AUTO-RESIZE JS PARA O VALOR NUNCA SAIR DO BLOCO -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="card p-6 relative overflow-hidden fade-up flex flex-col justify-between min-w-0" style="animation-delay:0.05s">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-accentBlue/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div class="icon-badge bg-accentBlue/14 text-accentBlue mb-3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+            <p class="text-sm font-semibold text-[#b3acd0] mb-1">Gasto Total (Atual)</p>
+            <div class="w-full min-w-0 mb-2 overflow-hidden flex items-center" style="height: 36px;">
+                <h2 id="kpiTotal" class="font-heading font-bold text-[#f5f2ff] tracking-[-0.01em] whitespace-nowrap m-0 max-w-full" style="font-size: 30px;">R$ 0,00</h2>
+            </div>
+            <div class="flex items-center text-sm mt-3 min-w-0">
+                <span id="kpiVar" class="text-[#b3acd0] flex items-center bg-white/5 px-2 py-0.5 rounded-md mr-2 font-mono font-medium text-xs whitespace-nowrap shrink-0">--%</span>
+                <span class="text-[#7a7499] text-xs truncate">vs. Ano Anterior <span id="kpiPeriodoLabel" class="font-medium text-[#b3acd0]"></span></span>
+            </div>
+            <div id="kpiFatPercent"></div>
+            <div class="kpi-bar" style="background: linear-gradient(90deg, #4aa8ff, transparent);"></div>
+        </div>
+        
+        <div class="card p-6 relative overflow-hidden fade-up flex flex-col justify-between min-w-0" style="animation-delay:0.1s">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-accentBrand/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div class="icon-badge bg-accentBrand/14 text-accentBrand mb-3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></div>
+            <p class="text-sm font-semibold text-[#b3acd0] mb-1">Ticket Médio / Pedido</p>
+            <div class="w-full min-w-0 mb-2 overflow-hidden flex items-center" style="height: 36px;">
+                <h2 id="kpiTicket" class="font-heading font-bold text-[#f5f2ff] tracking-[-0.01em] whitespace-nowrap m-0 max-w-full" style="font-size: 30px;">R$ 0,00</h2>
+            </div>
+            <div class="flex items-center text-sm mt-3"><span class="text-[#b3acd0] text-xs">Média por transação filtrada</span></div>
+            <div class="kpi-bar" style="background: linear-gradient(90deg, #9b7bff, transparent);"></div>
+        </div>
+        
+        <div class="card p-6 relative overflow-hidden fade-up flex flex-col justify-between min-w-0" style="animation-delay:0.15s">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-accentOrange/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div class="icon-badge bg-accentOrange/14 text-accentOrange mb-3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></div>
+            <p class="text-sm font-semibold text-[#b3acd0] mb-1">Qtd. de Pedidos / Linhas</p>
+            <div class="w-full min-w-0 mb-2 overflow-hidden flex items-center" style="height: 36px;">
+                <h2 id="kpiQtd" class="font-heading font-bold text-[#f5f2ff] tracking-[-0.01em] whitespace-nowrap m-0 max-w-full" style="font-size: 30px;">0</h2>
+            </div>
+            <div class="flex items-center text-sm mt-3"><span class="text-[#b3acd0] text-xs">Registros totais no período</span></div>
+            <div class="kpi-bar" style="background: linear-gradient(90deg, #ff9a3d, transparent);"></div>
+        </div>
+        
+        <div class="card p-6 relative overflow-hidden fade-up flex flex-col justify-between min-w-0" style="animation-delay:0.2s">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-accentPurple/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div class="icon-badge bg-accentPurple/14 text-accentPurple mb-3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div>
+            <p class="text-sm font-semibold text-[#b3acd0] mb-1">Gasto Médio Mensal</p>
+            <div class="w-full min-w-0 mb-2 overflow-hidden flex items-center" style="height: 36px;">
+                <h2 id="kpiMediaMes" class="font-heading font-bold text-[#f5f2ff] tracking-[-0.01em] whitespace-nowrap m-0 max-w-full" style="font-size: 30px;">R$ 0,00</h2>
+            </div>
+            <div class="flex items-center text-sm mt-3"><span class="text-[#b3acd0] text-xs">Distribuição média</span></div>
+            <div class="kpi-bar" style="background: linear-gradient(90deg, #e879f9, transparent);"></div>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 fade-up" style="animation-delay:0.25s">
+        <div class="card p-6">
+            <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Gasto por Classe</h3>
+            <p class="text-xs text-[#7a7499] mb-4">Proporção de custos alocados nas categorias (Top 7).</p>
+            <div class="relative h-[330px] w-full flex justify-center"><canvas id="chartClasse"></canvas></div>
+        </div>
+        <div class="card p-6">
+            <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Gasto por Filial</h3>
+            <p class="text-xs text-[#7a7499] mb-4">Volume total de compra consolidado por estado.</p>
+            <div class="relative h-[330px] w-full"><canvas id="chartFilial"></canvas></div>
+        </div>
+    </section>
+
+    <section class="card p-6 mb-8 fade-up" style="animation-delay:0.27s">
+        <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Insumo (Custo) x S&amp;OP</h3>
+        <p class="text-xs text-[#7a7499] mb-4">% do custo de insumo em relação ao Faturamento e ao S&amp;OP, e do Faturamento em relação ao S&amp;OP, por mês.</p>
+        <div class="relative h-[390px] w-full"><canvas id="chartInsumoPrevisao"></canvas></div>
+    </section>
+
+    <section class="card p-6 mb-8 fade-up" style="animation-delay:0.28s">
+        <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Quantidade x Custo por Mês</h3>
+        <p class="text-xs text-[#7a7499] mb-4">Colunas: soma da coluna QUANTIDADE por mês. Linha: custo total por mês. Aplique os filtros no topo (ex: Filial) para ver o comportamento de quantidade x preço em cada recorte.</p>
+        <div class="relative h-[390px] w-full"><canvas id="chartQtdCustoMes"></canvas></div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 fade-up" style="animation-delay:0.3s">
+        <div class="card p-6">
+            <div class="flex items-start justify-between gap-3 mb-1">
+                <div>
+                    <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Gasto x Faturamento / Mês</h3>
+                    <p class="text-xs text-[#7a7499]">Total de gasto acumulado por mês do ano.</p>
+                </div>
+                <div id="percentInsumoFat"></div>
+            </div>
+            <div class="relative h-[330px] w-full mt-3"><canvas id="chartMediaMes"></canvas></div>
+        </div>
+        <div class="card p-6">
+            <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Gasto por Componente (Top 10)</h3>
+            <p class="text-xs text-[#7a7499] mb-4">Maiores insumos direcionadores de custos.</p>
+            <div class="relative h-[330px] w-full"><canvas id="chartComponente"></canvas></div>
+        </div>
+    </section>
+
+    <section class="card p-6 mb-8 fade-up" style="animation-delay:0.32s">
+        <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Evolução do Gasto: Ano x Ano</h3>
+        <p class="text-xs text-[#7a7499] mb-4">Comparativo mensal do comportamento de compras (e faturamento e S&amp;OP) ao longo dos anos.</p>
+        <div class="relative h-[390px] w-full"><canvas id="chartEvolucao"></canvas></div>
+    </section>
+
+    <section class="card p-6 mb-8 fade-up" style="animation-delay:0.37s">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+                <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Projeção: Impacto do Faturamento no Insumo</h3>
+                <p class="text-xs text-[#7a7499]">Simule um crescimento de faturamento e veja o impacto proporcional no custo de insumos, mantendo a relação insumo/faturamento do período filtrado.</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <label for="inputCrescimentoFat" class="text-xs text-[#b3acd0] font-mono whitespace-nowrap">Crescimento do Faturamento</label>
+                <div class="relative">
+                    <input type="number" id="inputCrescimentoFat" value="10" step="0.5" class="search-input w-24 !pl-3 pr-7 text-right">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7a7499] pointer-events-none">%</span>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white/[0.03] border border-[rgba(255,255,255,0.06)] rounded-xl p-4 min-w-0">
+                <p class="text-xs text-[#b3acd0] mb-1">Faturamento Atual</p>
+                <div class="w-full min-w-0 overflow-hidden">
+                    <p id="projFatAtual" class="text-xl font-heading font-bold text-[#f5f2ff] whitespace-nowrap m-0 max-w-full">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="bg-accentBlue/[0.08] border border-accentBlue/20 rounded-xl p-4 min-w-0">
+                <p class="text-xs text-accentBlue mb-1">Faturamento Projetado</p>
+                <div class="w-full min-w-0 overflow-hidden">
+                    <p id="projFatProjetado" class="text-xl font-heading font-bold text-[#f5f2ff] whitespace-nowrap m-0 max-w-full">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="bg-white/[0.03] border border-[rgba(255,255,255,0.06)] rounded-xl p-4 min-w-0">
+                <p class="text-xs text-[#b3acd0] mb-1">Insumo Atual</p>
+                <div class="w-full min-w-0 overflow-hidden">
+                    <p id="projInsumoAtual" class="text-xl font-heading font-bold text-[#f5f2ff] whitespace-nowrap m-0 max-w-full">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="bg-accentOrange/[0.08] border border-accentOrange/20 rounded-xl p-4 min-w-0">
+                <p class="text-xs text-accentOrange mb-1">Insumo Projetado</p>
+                <div class="w-full min-w-0 overflow-hidden">
+                    <p id="projInsumoProjetado" class="text-xl font-heading font-bold text-[#f5f2ff] whitespace-nowrap m-0 max-w-full">R$ 0,00</p>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4 pt-4 card-divider flex flex-wrap items-center justify-between gap-3">
+            <p class="text-xs text-[#7a7499]">Baseado na relação insumo/faturamento do período filtrado (<span id="projRatioAtual" class="text-[#b3acd0] font-mono">0%</span>). Ajuste os filtros no topo para simular cenários específicos (ano, filial, categoria etc.).</p>
+            <div class="text-xs bg-accentOrange/14 text-accentOrange px-3 py-1.5 rounded-lg font-mono font-semibold border border-accentOrange/30 max-w-full break-words">
+                Impacto adicional: <span id="projImpacto">R$ 0,00</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card p-6 mb-8 fade-up" style="animation-delay:0.4s">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div>
+                <h3 class="text-lg font-heading font-semibold text-[#f5f2ff] mb-1">Custo Total Por Insumo (Curva ABC)</h3>
+                <p class="text-xs text-[#7a7499]">Detalhamento dos insumos geradores de custos.</p>
+            </div>
+            <div class="relative search-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#7a7499]"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar componente ou classe...">
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-[rgba(255,255,255,0.07)] text-xs text-[#b3acd0] font-mono">
+                        <th class="py-3 px-2 font-semibold uppercase w-8"></th>
+                        <th class="py-3 px-4 font-semibold uppercase">Componente</th>
+                        <th class="py-3 px-4 font-semibold uppercase">Classe</th>
+                        <th class="py-3 px-4 font-semibold uppercase">Grupo</th>
+                        <th class="py-3 px-4 font-semibold uppercase">Último Fornecedor</th>
+                        <th class="py-3 px-4 font-semibold uppercase text-right">Preço Médio</th>
+                        <th class="py-3 px-4 font-semibold uppercase text-right">Qtd. Pedidos</th>
+                        <th class="py-3 px-4 font-semibold uppercase text-right">Quantidade</th>
+                        <th class="py-3 px-4 font-semibold uppercase text-right">Custo Total</th>
+                        <th class="py-3 px-4 font-semibold uppercase text-center">Curva</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaRanking" class="text-sm">
+                    <tr><td colspan="10" class="py-4 text-center text-[#7a7499]">Sincronizando dados...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4 flex items-center justify-between card-divider pt-4">
+            <p class="text-xs text-[#b3acd0]" id="tableInfo">Mostrando 0 itens</p>
+            <div class="flex items-center gap-2">
+                <button id="btnPrev" class="px-3 py-1.5 text-xs font-medium text-[#f5f2ff] bg-white/5 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50">Anterior</button>
+                <span id="pageIndicator" class="text-xs text-[#b3acd0] font-mono font-medium px-2">Página 1</span>
+                <button id="btnNext" class="px-3 py-1.5 text-xs font-medium text-[#f5f2ff] bg-white/5 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50">Próxima</button>
+            </div>
+        </div>
+    </section>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        
+        let globalData = [];
+        let filteredData = [];
+        let globalFaturamento = [];
+        let faturamentoFiltrado = [];
+        // NOVAS VARIÁVEIS PARA A PREVISÃO
+        let globalPrevisao = [];
+        let previsaoFiltrada = [];
+        
+        let chartInstances = {};
+        let tabelaCompleta = [];
+        let tabelaFiltrada = [];
+        let currentPage = 1;
+        const itemsPerPage = 25;
+
+        const formatBRL = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+        const formatShortBRL = (value) => {
+            if (!value || value === 0) return '';
+            if (value >= 1000000) return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
+            if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+            return 'R$ ' + value.toFixed(0);
+        };
+
+        const colorsArr = ['#9b7bff', '#4aa8ff', '#ff9a3d', '#e879f9', '#ff5a4f', '#22d3ee', '#ffd84d', '#7dd3fc'];
+        const mesesOrdenados = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+        
+        Chart.defaults.color = '#b3acd0';
+        Chart.defaults.font.family = 'Inter';
+        Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
+        Chart.defaults.plugins.tooltip.backgroundColor = '#1d1838';
+        Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.12)';
+        Chart.defaults.plugins.tooltip.borderWidth = 1;
+        Chart.defaults.plugins.tooltip.cornerRadius = 10;
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.titleFont = { family: 'Inter', weight: '600' };
+        Chart.defaults.plugins.tooltip.bodyFont = { family: 'JetBrains Mono' };
+
+        // =========================================================================
+        // RÓTULOS ANTI-SOBREPOSIÇÃO
+        // 1) "chip" escuro atrás do número -> legível mesmo por cima de barras/linhas;
+        // 2) display: 'auto' -> o plugin descarta automaticamente um rótulo que colidiria
+        //    com outro já desenhado (em vez de empilhar números ilegíveis);
+        // 3) barras com muitas categorias (meses, top 10) ganham rótulo na vertical,
+        //    o que elimina a colisão horizontal e mantém TODOS os valores visíveis;
+        // 4) linhas alinham o rótulo para fora da curva (acima em picos, abaixo em vales).
+        // =========================================================================
+        const labelChip = {
+            backgroundColor: 'rgba(11,9,24,0.78)',
+            borderColor: 'rgba(255,255,255,0.06)',
+            borderWidth: 1,
+            borderRadius: 5,
+            padding: { top: 2, bottom: 2, left: 5, right: 5 }
+        };
+
+        // Os rótulos SEMPRE ficam na horizontal. Quando há muitas categorias (ex.: 12 meses,
+        // Top 10), em vez de girar o texto usamos três recursos combinados:
+        //   a) formato compacto e sem "R$" (1,2M / 840k) -> ocupa quase metade da largura;
+        //   b) zigue-zague: rótulos vizinhos alternam entre uma linha mais baixa e uma mais alta,
+        //      então dois números lado a lado nunca disputam o mesmo espaço;
+        //   c) display 'auto' como rede de segurança para qualquer colisão restante.
+        const muitasCategorias = (qtdCategorias) => qtdCategorias > 7;
+        const paddingBarras = (denso) => ({ top: denso ? 48 : 30, right: 12, left: 8, bottom: 2 });
+        const paddingLinhas = { top: 34, right: 16, left: 12, bottom: 16 };
+
+        // Valor curto e sem prefixo, para caber na horizontal em gráficos cheios.
+        const formatCompacto = (value) => {
+            if (!value || value === 0) return '';
+            if (value >= 1000000) return (value / 1000000).toFixed(1).replace('.', ',') + 'M';
+            if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
+            return value.toFixed(0);
+        };
+
+        // Alterna a altura do rótulo conforme a posição (barra par x ímpar, dataset par x ímpar).
+        const offsetZigueZague = (ctx) => (((ctx.dataIndex + ctx.datasetIndex) % 2) === 0 ? 3 : 17);
+
+        function dataLabelsBarras(denso, extra) {
+            return Object.assign({
+                anchor: 'end', align: 'end',
+                rotation: 0,
+                offset: denso ? offsetZigueZague : 3,
+                color: (ctx) => ctx.dataset.backgroundColor || ctx.dataset.borderColor || '#ffffff',
+                font: { weight: 'bold', size: denso ? 9 : 10 },
+                display: 'auto', clamp: true, clip: false,
+                formatter: (value) => denso ? formatCompacto(value) : formatShortBRL(value)
+            }, labelChip, extra || {});
+        }
+
+        function alinhaForaDaCurva(ctx) {
+            const dados = ctx.dataset.data || [];
+            const atual = Number(dados[ctx.dataIndex]);
+            const vizinhos = [Number(dados[ctx.dataIndex - 1]), Number(dados[ctx.dataIndex + 1])].filter(v => Number.isFinite(v));
+            if (!vizinhos.length || !Number.isFinite(atual)) return 'top';
+            const media = vizinhos.reduce((a, b) => a + b, 0) / vizinhos.length;
+            return atual < media ? 'bottom' : 'top';
+        }
+
+        function dataLabelsLinhas(extra) {
+            return Object.assign({
+                anchor: 'center', align: alinhaForaDaCurva, offset: 7,
+                color: (ctx) => ctx.dataset.borderColor || '#ffffff',
+                font: { weight: 'bold', size: 10 },
+                display: 'auto', clamp: true, clip: false,
+                formatter: (value) => formatCompacto(value)
+            }, labelChip, extra || {});
+        }
+
+        function dataLabelsRosca(dados) {
+            const total = dados.reduce((a, b) => a + b, 0) || 1;
+            return Object.assign({
+                color: '#ffffff',
+                font: { weight: 'bold', size: 11 },
+                formatter: (value) => formatShortBRL(value),
+                // fatias muito pequenas não recebem rótulo; as demais usam 'auto'
+                display: (c) => ((c.dataset.data[c.dataIndex] / total) > 0.04 ? 'auto' : false)
+            }, labelChip);
+        }
+
+        // Mantido por compatibilidade com gráficos de barra simples.
+        const defaultDataLabelsConfig = dataLabelsBarras(false);
+
+        // =========================================================================
+        // SINCRONIZAÇÃO AUTOMÁTICA DOS TRÊS ARQUIVOS LOCAIS NA MESMA PASTA
+        // =========================================================================
+        document.addEventListener("DOMContentLoaded", () => {
+            let dadosInsumosOk = false;
+            let dadosFaturamentoOk = false;
+            let dadosPrevisaoOk = false;
+
+            function verificarSincronizacao() {
+                if(dadosInsumosOk && dadosFaturamentoOk && dadosPrevisaoOk) {
+                    document.getElementById('loaderIcon').style.display = 'none';
+                    const statusText = document.getElementById('statusTexto');
+                    statusText.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-accentOk mr-1" style="display:inline-block;vertical-align:-3px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Bases Sincronizadas';
+                    statusText.classList.replace('text-[#b3acd0]', 'text-accentOk');
+                    
+                    preencherFiltros();
+                    aplicarFiltros(); 
+                }
+            }
+
+            // 1. CARREGAR DADOS DE INSUMOS
+            Papa.parse("dados.csv", {
+                download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+                complete: function(results) { processarDadosInsumos(results.data); dadosInsumosOk = true; verificarSincronizacao(); },
+                error: function(err) { console.error("Erro dados.csv:", err); dadosInsumosOk = true; verificarSincronizacao(); }
+            });
+
+            // 2. CARREGAR BASE DE VENDAS (FATURAMENTO)
+            Papa.parse("base_vendas.csv", {
+                download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+                complete: function(results) { processarDadosFaturamento(results.data); dadosFaturamentoOk = true; verificarSincronizacao(); },
+                error: function(err) { console.error("Erro base_vendas.csv:", err); dadosFaturamentoOk = true; verificarSincronizacao(); }
+            });
+
+            // 3. CARREGAR PREVISÃO
+            Papa.parse("base_vendas_previsao.csv", {
+                download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+                complete: function(results) { processarDadosPrevisao(results.data); dadosPrevisaoOk = true; verificarSincronizacao(); },
+                error: function(err) { console.error("Erro base_vendas_previsao.csv:", err); dadosPrevisaoOk = true; verificarSincronizacao(); }
+            });
+
+            // ALTERAÇÃO DO TOGGLE
+            document.getElementById('toggleFaturamento').addEventListener('change', () => {
+                aplicarFiltros(); 
+            });
+
+            // ALTERAÇÃO DO TOGGLE DE S&OP
+            document.getElementById('toggleSOP').addEventListener('change', () => {
+                aplicarFiltros();
+            });
+            
+            // Reajusta os números dos KPIs se a janela for redimensionada
+            window.addEventListener('resize', autoResizeKPIs);
+        });
+
+        function processarDadosInsumos(data) {
+            globalData = data.filter(d => d['CUSTO TOTAL (ATUAL)'] != null).map(d => {
+                let mesStr = String(d['MÊS']).toUpperCase().trim();
+                let custoTotalRaw = d['CUSTO TOTAL (ATUAL)'];
+                let custoTotal = 0;
+                if (typeof custoTotalRaw === 'number') { custoTotal = custoTotalRaw; }
+                else if (typeof custoTotalRaw === 'string') { custoTotal = parseFloat(custoTotalRaw.replace(/\./g, '').replace(',', '.')) || 0; }
+                let quantidadeRaw = d['QUANTIDADE'];
+                let quantidade = 0;
+                if (typeof quantidadeRaw === 'number') { quantidade = quantidadeRaw; }
+                else if (typeof quantidadeRaw === 'string') { quantidade = parseFloat(quantidadeRaw.replace(/\./g, '').replace(',', '.')) || 0; }
+                return {
+                    estado: String(d['ESTADO'] || 'N/A').trim(),
+                    componente: String(d['DESC. COMPONENTE'] || 'N/A').trim(),
+                    classe: String(d['CLASSE'] || 'N/A').trim(),
+                    grupo: String(d['GRUPO'] || 'N/A').trim(),
+                    fornecedor: String(d['FORNECEDOR'] || 'N/A').trim(),
+                    quantidade: quantidade,
+                    custoTotal: custoTotal,
+                    ano: String(d['ANO']), mes: mesStr, mesIndex: mesesOrdenados.indexOf(mesStr) 
+                };
+            });
+        }
+
+        function processarDadosFaturamento(data) {
+            globalFaturamento = data.map(d => {
+                const chaves = Object.keys(d);
+                let valKey = chaves.find(k => k && (k.toUpperCase().includes('FATURAMENTO') || k.toUpperCase().includes('VALOR') || k.toUpperCase().includes('TOTAL') || k.toUpperCase().includes('RECEITA')));
+                
+                let rawVal = valKey ? d[valKey] : 0;
+                let val = 0;
+                if (typeof rawVal === 'number') { val = rawVal; } 
+                else if (typeof rawVal === 'string') {
+                    let strVal = rawVal.replace(/[R$\s]/g, '').trim();
+                    if (strVal.includes(',') && strVal.includes('.')) { strVal = strVal.replace(/\./g, '').replace(',', '.'); }
+                    else if (strVal.includes(',')) { strVal = strVal.replace(',', '.'); }
+                    val = parseFloat(strVal) || 0;
+                }
+
+                let ano = '', mesIndex = -1, mesStr = 'N/A';
+                let dataKey = chaves.find(k => k && k.toUpperCase().includes('DATA'));
+                // Colunas do Power BI vêm como "fVendas[Mês]" / "fVendas[ANO]" (não o nome exato
+                // "MÊS"/"ANO"), então usamos "contém" em vez de igualdade exata. Excluímos a
+                // coluna combinada "Mês/Ano" para não confundir com as colunas separadas.
+                let mesKey = chaves.find(k => k && !k.includes('/') && (k.toUpperCase().includes('MÊS') || k.toUpperCase().includes('MES')));
+                let anoKey = chaves.find(k => k && !k.includes('/') && k.toUpperCase().includes('ANO'));
+
+                if (mesKey && anoKey) {
+                    ano = String(d[anoKey]).trim();
+                    let m = String(d[mesKey]).toUpperCase().trim();
+                    mesIndex = mesesOrdenados.indexOf(m);
+                    if (mesIndex === -1 && !isNaN(parseInt(m))) { mesIndex = parseInt(m) - 1; }
+                    mesStr = mesesOrdenados[mesIndex] || m;
+                } 
+                else if (dataKey) {
+                    let dataRaw = String(d[dataKey]).trim();
+                    let m1 = dataRaw.match(/(\d{4})-(\d{2})/);           
+                    let m2 = dataRaw.match(/(\d{2})\/(\d{2})\/(\d{4})/); 
+                    let m3 = dataRaw.match(/(\d{2})\/(\d{4})/);           
+                    let m4 = dataRaw.match(/(\d{4})\/(\d{2})/);           
+                    
+                    if (m2) { mesIndex = parseInt(m2[2], 10) - 1; ano = m2[3]; }
+                    else if (m1) { ano = m1[1]; mesIndex = parseInt(m1[2], 10) - 1; }
+                    else if (m3) { mesIndex = parseInt(m3[1], 10) - 1; ano = m3[2]; }
+                    else if (m4) { ano = m4[1]; mesIndex = parseInt(m4[2], 10) - 1; }
+                    
+                    mesStr = mesesOrdenados[mesIndex] || 'N/A';
+                }
+
+                return { ano, mes: mesStr, mesIndex, faturamento: val };
+            }).filter(d => d.ano && d.faturamento > 0);
+        }
+
+        function processarDadosPrevisao(data) {
+            globalPrevisao = data.map(d => {
+                const chaves = Object.keys(d);
+                let valKey = chaves.find(k => k && (
+                    k.toUpperCase().includes('PREVISAO') || 
+                    k.toUpperCase().includes('FATURAMENTO') || 
+                    k.toUpperCase().includes('VALOR') || 
+                    k.toUpperCase().includes('TOTAL')
+                ));
+                
+                let rawVal = valKey ? d[valKey] : 0;
+                let val = 0;
+                if (typeof rawVal === 'number') { val = rawVal; } 
+                else if (typeof rawVal === 'string') {
+                    let strVal = rawVal.replace(/[R$\s]/g, '').trim();
+                    if (strVal.includes(',') && strVal.includes('.')) { strVal = strVal.replace(/\./g, '').replace(',', '.'); } 
+                    else if (strVal.includes(',')) { strVal = strVal.replace(',', '.'); }
+                    val = parseFloat(strVal) || 0;
+                }
+
+                let ano = '', mesIndex = -1, mesStr = 'N/A';
+                let dataKey = chaves.find(k => k && k.toUpperCase().includes('DATA'));
+                // Mesmo ajuste: colunas vêm como "fVendas[Mês]" / "fVendas[ANO]", então usamos
+                // "contém" em vez de igualdade exata, excluindo a coluna combinada "Mês/Ano".
+                let mesKey = chaves.find(k => k && !k.includes('/') && (k.toUpperCase().includes('MÊS') || k.toUpperCase().includes('MES')));
+                let anoKey = chaves.find(k => k && !k.includes('/') && k.toUpperCase().includes('ANO'));
+
+                if (mesKey && anoKey) {
+                    ano = String(d[anoKey]).trim();
+                    let m = String(d[mesKey]).toUpperCase().trim();
+                    mesIndex = mesesOrdenados.indexOf(m);
+                    if (mesIndex === -1 && !isNaN(parseInt(m))) { mesIndex = parseInt(m) - 1; }
+                    mesStr = mesesOrdenados[mesIndex] || m;
+                } 
+                else if (dataKey) {
+                    let dataRaw = String(d[dataKey]).trim();
+                    let m1 = dataRaw.match(/(\d{4})-(\d{2})/);           
+                    let m2 = dataRaw.match(/(\d{2})\/(\d{2})\/(\d{4})/); 
+                    let m3 = dataRaw.match(/(\d{2})\/(\d{4})/);           
+                    let m4 = dataRaw.match(/(\d{4})\/(\d{2})/);           
+                    
+                    if (m2) { mesIndex = parseInt(m2[2], 10) - 1; ano = m2[3]; }
+                    else if (m1) { ano = m1[1]; mesIndex = parseInt(m1[2], 10) - 1; }
+                    else if (m3) { mesIndex = parseInt(m3[1], 10) - 1; ano = m3[2]; }
+                    else if (m4) { ano = m4[1]; mesIndex = parseInt(m4[2], 10) - 1; }
+                    
+                    mesStr = mesesOrdenados[mesIndex] || 'N/A';
+                }
+
+                return { ano, mes: mesStr, mesIndex, valor: val };
+            }).filter(d => d.ano && d.valor > 0);
+        }
+
+        const filterState = { ano: new Set(), mes: new Set(), filial: new Set(), grupo: new Set(), classe: new Set(), insumo: new Set() };
+        const matchSet = (set, value) => set.size === 0 || set.has(value);
+
+        function preencherFiltros() {
+            const anos = [...new Set(globalData.map(d => d.ano))].filter(Boolean).sort().reverse();
+            const meses = mesesOrdenados.filter(m => globalData.some(d => d.mes === m));
+            const filiais = [...new Set(globalData.map(d => d.estado))].filter(Boolean).sort();
+            const grupos = [...new Set(globalData.map(d => d.grupo))].filter(Boolean).sort();
+            const classes = [...new Set(globalData.map(d => d.classe))].filter(Boolean).sort();
+            const insumos = [...new Set(globalData.map(d => d.componente))].filter(Boolean).sort();
+
+            criarMultiSelect('ano', 'Ano', anos);
+            criarMultiSelect('mes', 'Mes', meses);
+            criarMultiSelect('filial', 'Filial', filiais);
+            criarMultiSelect('grupo', 'Grupo', grupos);
+            criarMultiSelect('classe', 'Classe', classes);
+            criarMultiSelect('insumo', 'Insumo', insumos);
+
+            configurarComportamentoDropdowns();
+        }
+
+        function criarMultiSelect(key, idSuffix, arr) {
+            const optionsContainer = document.getElementById('optionsFilter' + idSuffix);
+            optionsContainer.innerHTML = arr.map(v => `
+                <label class="ms-option">
+                    <input type="checkbox" value="${v}">
+                    <span>${v}</span>
+                </label>
+            `).join('');
+
+            optionsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (cb.checked) filterState[key].add(cb.value); else filterState[key].delete(cb.value);
+                    atualizarLabelMultiSelect(key, idSuffix, arr.length);
+                    aplicarFiltros();
+                });
+            });
+            atualizarLabelMultiSelect(key, idSuffix, arr.length);
+
+            // Campo de busca opcional dentro do painel (usado no filtro de Insumo)
+            const searchInput = document.getElementById('searchOptions' + idSuffix);
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.oninput = () => {
+                    const termo = searchInput.value.toLowerCase();
+                    optionsContainer.querySelectorAll('.ms-option').forEach(opt => {
+                        const texto = opt.querySelector('span').innerText.toLowerCase();
+                        opt.style.display = texto.includes(termo) ? '' : 'none';
+                    });
+                };
+            }
+        }
+
+        function atualizarLabelMultiSelect(key, idSuffix, total) {
+            const labelEl = document.getElementById('labelFilter' + idSuffix);
+            const set = filterState[key];
+            if (set.size === 0 || set.size === total) labelEl.innerText = 'Todos';
+            else if (set.size === 1) labelEl.innerText = [...set][0];
+            else labelEl.innerText = set.size + ' selecionados';
+        }
+
+        function configurarComportamentoDropdowns() {
+            const botoes = document.querySelectorAll('.multiselect-btn');
+            botoes.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const wrapperAtual = btn.closest('[data-ms-wrapper]');
+                    const painel = wrapperAtual.querySelector('.multiselect-panel');
+                    const estaAberto = !painel.classList.contains('hidden');
+                    document.querySelectorAll('.multiselect-panel').forEach(p => p.classList.add('hidden'));
+                    document.querySelectorAll('.multiselect-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('[data-ms-wrapper]').forEach(w => w.classList.remove('ms-active'));
+                    if (!estaAberto) { painel.classList.remove('hidden'); btn.classList.add('active'); wrapperAtual.classList.add('ms-active'); }
+                });
+            });
+
+            document.querySelectorAll('.multiselect-panel').forEach(p => p.addEventListener('click', e => e.stopPropagation()));
+            document.querySelectorAll('.multiselect-panel').forEach(p => p.addEventListener('mousedown', e => e.stopPropagation()));
+
+            document.querySelectorAll('[data-ms-wrapper]').forEach(wrapper => {
+                const idSuffix = wrapper.getAttribute('data-ms-wrapper');
+                const key = idSuffix.toLowerCase();
+                wrapper.querySelector('[data-action="all"]').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const checkboxes = wrapper.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => { cb.checked = true; filterState[key].add(cb.value); });
+                    atualizarLabelMultiSelect(key, idSuffix, checkboxes.length);
+                    aplicarFiltros();
+                });
+                wrapper.querySelector('[data-action="none"]').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const checkboxes = wrapper.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => { cb.checked = false; });
+                    filterState[key].clear();
+                    atualizarLabelMultiSelect(key, idSuffix, checkboxes.length);
+                    aplicarFiltros();
+                });
+            });
+
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.multiselect-panel').forEach(p => p.classList.add('hidden'));
+                document.querySelectorAll('.multiselect-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-ms-wrapper]').forEach(w => w.classList.remove('ms-active'));
+            });
+        }
+
+        function aplicarFiltros() {
+            filteredData = globalData.filter(d => {
+                return matchSet(filterState.ano, d.ano) &&
+                       matchSet(filterState.mes, d.mes) &&
+                       matchSet(filterState.filial, d.estado) &&
+                       matchSet(filterState.grupo, d.grupo) &&
+                       matchSet(filterState.classe, d.classe) &&
+                       matchSet(filterState.insumo, d.componente);
+            });
+            
+            faturamentoFiltrado = globalFaturamento.filter(d => {
+                return matchSet(filterState.ano, d.ano) && matchSet(filterState.mes, d.mes);
+            });
+            
+            previsaoFiltrada = globalPrevisao.filter(d => {
+                return matchSet(filterState.ano, d.ano) && matchSet(filterState.mes, d.mes);
+            });
+            
+            atualizarDashboard();
+        }
+
+        // --- SISTEMA INTELIGENTE DE FONTE (SINGLE LINE FIT) ---
+        // Encolhe a fonte de um valor até caber na largura do seu contêiner,
+        // garantindo que números grandes nunca ultrapassem o bloco.
+        function fitTextToContainer(id, maxSize, minSize) {
+            const el = document.getElementById(id);
+            if (!el || !el.parentElement) return;
+            el.style.fontSize = maxSize + 'px';
+            let size = maxSize;
+            while (el.scrollWidth > el.parentElement.clientWidth && size > minSize) {
+                size -= 1;
+                el.style.fontSize = size + 'px';
+            }
+        }
+
+        function autoResizeKPIs() {
+            ['kpiTotal', 'kpiTicket', 'kpiQtd', 'kpiMediaMes'].forEach(id => fitTextToContainer(id, 30, 10));
+            ['projFatAtual', 'projFatProjetado', 'projInsumoAtual', 'projInsumoProjetado'].forEach(id => fitTextToContainer(id, 20, 11));
+        }
+
+        // Reexecuta o ajuste assim que as fontes customizadas (Sora/JetBrains Mono)
+        // terminarem de carregar — antes disso a medição de largura pode ficar
+        // errada e o texto "escapa" do bloco após a troca de fonte.
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => autoResizeKPIs());
+        }
+
+        function atualizarDashboard() {
+            const total = filteredData.reduce((acc, val) => acc + val.custoTotal, 0);
+            const qtd = filteredData.length;
+            const ticket = qtd > 0 ? total / qtd : 0;
+            const mesesUnicos = new Set(filteredData.map(d => d.ano + '-' + d.mes)).size || 1;
+            const mediaMes = total / mesesUnicos;
+
+            const isFaturamentoAtivo = document.getElementById('toggleFaturamento').checked;
+            const totalFat = faturamentoFiltrado.reduce((acc, val) => acc + val.faturamento, 0);
+            const kpiFatEl = document.getElementById('kpiFatPercent');
+
+            document.getElementById('kpiTotal').innerText = formatBRL(total);
+            
+            if(isFaturamentoAtivo && totalFat > 0) {
+                const percent = ((total / totalFat) * 100).toFixed(1);
+                kpiFatEl.innerHTML = `
+                    <div class="mt-3 text-[11px] bg-[#9b7bff]/15 text-accentBrand px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 font-mono font-semibold border border-[#9b7bff]/30 whitespace-nowrap">
+                        Custo é ${percent}% do Fat. (${formatShortBRL(totalFat)})
+                    </div>
+                `;
+            } else {
+                kpiFatEl.innerHTML = '';
+            }
+
+            document.getElementById('kpiTicket').innerText = formatBRL(ticket);
+            document.getElementById('kpiQtd').innerText = qtd.toLocaleString('pt-BR');
+            document.getElementById('kpiMediaMes').innerText = formatBRL(mediaMes);
+
+            const anoFiltrado = filterState.ano.size === 1 ? [...filterState.ano][0] : null;
+
+            if (anoFiltrado) {
+                const anoAnterior = String(parseInt(anoFiltrado) - 1);
+
+                let maxMesIndex = 11;
+                if (filteredData.length > 0) {
+                    maxMesIndex = Math.max(...filteredData.map(d => d.mesIndex));
+                    document.getElementById('kpiPeriodoLabel').innerText = `(até ${mesesOrdenados[maxMesIndex]})`;
+                } else { document.getElementById('kpiPeriodoLabel').innerText = ""; }
+
+                const dadosAnoAnterior = globalData.filter(d => 
+                    d.ano === anoAnterior &&
+                    matchSet(filterState.filial, d.estado) &&
+                    matchSet(filterState.grupo, d.grupo) &&
+                    matchSet(filterState.classe, d.classe) &&
+                    matchSet(filterState.insumo, d.componente) &&
+                    d.mesIndex <= maxMesIndex
+                );
+                
+                const totalAnterior = dadosAnoAnterior.reduce((acc, val) => acc + val.custoTotal, 0);
+                const varContainer = document.getElementById('kpiVar');
+                
+                if(totalAnterior > 0) {
+                    const variacao = ((total - totalAnterior) / totalAnterior) * 100;
+                    if(variacao > 0) {
+                        varContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-right:4px;vertical-align:-1px"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg> +${variacao.toFixed(1)}%`;
+                        varContainer.className = "text-accentRed flex items-center bg-accentRed/14 px-2 py-0.5 rounded-md mr-2 font-mono font-medium text-xs";
+                    } else {
+                        varContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-right:4px;vertical-align:-1px"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg> ${variacao.toFixed(1)}%`;
+                        varContainer.className = "text-accentOk flex items-center bg-accentOk/14 px-2 py-0.5 rounded-md mr-2 font-mono font-medium text-xs";
+                    }
+                } else {
+                    varContainer.innerHTML = `--%`;
+                    varContainer.className = "text-[#b3acd0] flex items-center bg-white/5 px-2 py-0.5 rounded-md mr-2 font-mono font-medium text-xs";
+                }
+            } else {
+                document.getElementById('kpiPeriodoLabel').innerText = "";
+                document.getElementById('kpiVar').innerHTML = `--%`;
+                document.getElementById('kpiVar').className = "text-[#b3acd0] flex items-center bg-white/5 px-2 py-0.5 rounded-md mr-2 font-mono font-medium text-xs";
+            }
+
+            renderChartClasse(); renderChartFilial(); renderChartQtdCustoMes(); renderChartMediaMes(); renderChartComponente(); renderChartEvolucao(); renderChartInsumoPrevisao(); processarDadosTabela(); atualizarProjecao();
+            
+            // Ativa auto-resize assim que DOM atualizou dados
+            requestAnimationFrame(() => autoResizeKPIs());
+        }
+
+        function atualizarProjecao() {
+            const totalInsumo = filteredData.reduce((acc, val) => acc + val.custoTotal, 0);
+            const totalFat = faturamentoFiltrado.reduce((acc, val) => acc + val.faturamento, 0);
+            const crescimento = parseFloat(document.getElementById('inputCrescimentoFat').value);
+            const taxa = isNaN(crescimento) ? 0 : crescimento / 100;
+
+            const fatProjetado = totalFat * (1 + taxa);
+            const insumoProjetado = totalInsumo * (1 + taxa);
+            const impacto = insumoProjetado - totalInsumo;
+            const ratio = totalFat > 0 ? ((totalInsumo / totalFat) * 100).toFixed(1) + '%' : 'N/D';
+
+            document.getElementById('projFatAtual').innerText = totalFat > 0 ? formatBRL(totalFat) : 'Sem dados';
+            document.getElementById('projFatProjetado').innerText = totalFat > 0 ? formatBRL(fatProjetado) : 'Sem dados';
+            document.getElementById('projInsumoAtual').innerText = formatBRL(totalInsumo);
+            document.getElementById('projInsumoProjetado').innerText = formatBRL(insumoProjetado);
+            document.getElementById('projRatioAtual').innerText = ratio;
+            document.getElementById('projImpacto').innerText = (impacto >= 0 ? '+ ' : '- ') + formatBRL(Math.abs(impacto));
+
+            requestAnimationFrame(() => autoResizeKPIs());
+        }
+
+        document.getElementById('inputCrescimentoFat').addEventListener('input', atualizarProjecao);
+
+        function destroyChart(id) { if (chartInstances[id]) chartInstances[id].destroy(); }
+        function groupBy(array, key) { return array.reduce((r, c) => { (r[c[key]] = r[c[key]] || []).push(c); return r; }, {}); }
+
+        function renderChartClasse() {
+            destroyChart('chartClasse');
+            const agrupado = groupBy(filteredData, 'classe');
+            const labels = Object.keys(agrupado).sort((a,b) => agrupado[b].reduce((s,i)=>s+i.custoTotal,0) - agrupado[a].reduce((s,i)=>s+i.custoTotal,0)).slice(0, 7);
+            const data = labels.map(l => agrupado[l].reduce((acc, val) => acc + val.custoTotal, 0));
+            const ctx = document.getElementById('chartClasse').getContext('2d');
+            chartInstances['chartClasse'] = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ data: data, backgroundColor: colorsArr, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#e6e1f7', boxWidth: 12 } }, tooltip: { callbacks: { label: (ctx) => ' ' + formatBRL(ctx.raw) } }, datalabels: dataLabelsRosca(data) }, cutout: '70%' } });
+        }
+
+        function renderChartFilial() {
+            destroyChart('chartFilial');
+            const agrupado = groupBy(filteredData, 'estado');
+            const labels = Object.keys(agrupado).sort((a,b) => agrupado[b].reduce((s,i)=>s+i.custoTotal,0) - agrupado[a].reduce((s,i)=>s+i.custoTotal,0));
+            const data = labels.map(l => agrupado[l].reduce((acc, val) => acc + val.custoTotal, 0));
+            const ctx = document.getElementById('chartFilial').getContext('2d');
+            const rot = muitasCategorias(labels.length);
+            chartInstances['chartFilial'] = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Gasto Filial', data: data, backgroundColor: '#9b7bff', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, layout: { padding: paddingBarras(rot) }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ' ' + formatBRL(ctx.raw) } }, datalabels: dataLabelsBarras(rot) }, scales: { x: { ticks: { autoSkip: false, maxRotation: 40, font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { display: false }, grid: { display: false } } } }
+            });
+        }
+
+        function renderChartMediaMes() {
+            destroyChart('chartMediaMes');
+            const agrupadoInsumos = groupBy(filteredData, 'mes');
+            const agrupadoFat = groupBy(faturamentoFiltrado, 'mes');
+            
+            const dataInsumos = mesesOrdenados.map(mes => { const itens = agrupadoInsumos[mes] || []; return itens.reduce((acc, val) => acc + val.custoTotal, 0); });
+            const dataFat = mesesOrdenados.map(mes => { const itens = agrupadoFat[mes] || []; return itens.reduce((acc, val) => acc + val.faturamento, 0); });
+
+            const isFatActive = document.getElementById('toggleFaturamento').checked;
+            
+            const datasets = [{ label: 'Gasto Insumos', data: dataInsumos, backgroundColor: '#ff9a3d', borderRadius: 4 }];
+            if (isFatActive) { datasets.push({ label: 'Faturamento', data: dataFat, backgroundColor: '#4aa8ff', borderRadius: 4 }); }
+
+            const percentEl = document.getElementById('percentInsumoFat');
+            const totalInsumosPeriodo = dataInsumos.reduce((a, b) => a + b, 0);
+            const totalFatPeriodo = dataFat.reduce((a, b) => a + b, 0);
+            if (isFatActive && totalFatPeriodo > 0) {
+                const pctPeriodo = ((totalInsumosPeriodo / totalFatPeriodo) * 100).toFixed(1);
+                percentEl.innerHTML = `<div class="text-[11px] bg-[#4aa8ff]/14 text-accentBlue px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 font-mono font-semibold border border-[#4aa8ff]/30 whitespace-nowrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg> Insumos = ${pctPeriodo}% do Fat.</div>`;
+            } else {
+                percentEl.innerHTML = '';
+            }
+
+            const ctx = document.getElementById('chartMediaMes').getContext('2d');
+            const rot = muitasCategorias(mesesOrdenados.length);
+            chartInstances['chartMediaMes'] = new Chart(ctx, { type: 'bar', data: { labels: mesesOrdenados, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: paddingBarras(rot) }, plugins: { legend: { display: isFatActive, labels: { color: '#e6e1f7', boxWidth: 12, padding: 14 } }, tooltip: { callbacks: { label: (ctx) => ' ' + formatBRL(ctx.raw), afterBody: (items) => { if (!isFatActive) return ''; const idx = items[0].dataIndex; const insumo = dataInsumos[idx]; const fat = dataFat[idx]; if (fat > 0) { return [`Insumos = ${((insumo / fat) * 100).toFixed(1)}% do faturamento`]; } return ''; } } }, datalabels: dataLabelsBarras(rot) }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { display: false }, grid: { display: false } } } } });
+        }
+
+        function renderChartQtdCustoMes() {
+            destroyChart('chartQtdCustoMes');
+
+            const agrupadoMes = {};
+            filteredData.forEach(d => {
+                if (!agrupadoMes[d.mes]) agrupadoMes[d.mes] = { qtd: 0, custo: 0 };
+                agrupadoMes[d.mes].qtd += (d.quantidade || 0);
+                agrupadoMes[d.mes].custo += d.custoTotal;
+            });
+
+            const dataQtd = mesesOrdenados.map(mes => (agrupadoMes[mes] && agrupadoMes[mes].qtd) || 0);
+            const dataCusto = mesesOrdenados.map(mes => (agrupadoMes[mes] && agrupadoMes[mes].custo) || 0);
+
+            const ctx = document.getElementById('chartQtdCustoMes').getContext('2d');
+            chartInstances['chartQtdCustoMes'] = new Chart(ctx, {
+                data: {
+                    labels: mesesOrdenados,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Quantidade',
+                            data: dataQtd,
+                            backgroundColor: '#4aa8ff',
+                            borderRadius: 4,
+                            yAxisID: 'yQtd',
+                            order: 2,
+                            datalabels: dataLabelsBarras(true, {
+                                color: '#4aa8ff',
+                                formatter: (val) => val > 0 ? formatCompacto(val) : ''
+                            })
+                        },
+                        {
+                            type: 'line',
+                            label: 'Custo Total',
+                            data: dataCusto,
+                            borderColor: '#ff9a3d',
+                            backgroundColor: '#ff9a3d',
+                            pointBackgroundColor: '#ff9a3d',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'yCusto',
+                            order: 1,
+                            datalabels: dataLabelsLinhas({
+                                color: '#ff9a3d',
+                                formatter: (val) => val > 0 ? formatCompacto(val) : ''
+                            })
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 48, right: 12, left: 8, bottom: 4 } },
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { color: '#e6e1f7', boxWidth: 12, padding: 14 } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ctx.dataset.label === 'Custo Total'
+                                    ? ' Custo Total: ' + formatBRL(ctx.raw)
+                                    : ' Quantidade: ' + ctx.raw.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+                            }
+                        }
+                    },
+                    scales: {
+                        yQtd: {
+                            type: 'linear', position: 'left', beginAtZero: true,
+                            ticks: { color: '#b3acd0' }, grid: { color: 'rgba(255,255,255,0.05)' },
+                            title: { display: true, text: 'Quantidade', color: '#7a7499', font: { size: 11 } }
+                        },
+                        yCusto: {
+                            type: 'linear', position: 'right', beginAtZero: true,
+                            ticks: { display: false }, grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartComponente() {
+            destroyChart('chartComponente');
+            const agrupado = groupBy(filteredData, 'componente');
+            const labels = Object.keys(agrupado).sort((a,b) => agrupado[b].reduce((s,i)=>s+i.custoTotal,0) - agrupado[a].reduce((s,i)=>s+i.custoTotal,0)).slice(0, 10);
+            const data = labels.map(l => agrupado[l].reduce((acc, val) => acc + val.custoTotal, 0));
+            const ctx = document.getElementById('chartComponente').getContext('2d');
+            const rot = muitasCategorias(labels.length);
+            chartInstances['chartComponente'] = new Chart(ctx, { type: 'bar', data: { labels: labels.map(l => l.length > 12 ? l.substring(0, 12) + '...' : l), datasets: [{ label: 'Custo Insumo', data: data, backgroundColor: '#e879f9', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: paddingBarras(rot) }, plugins: { legend: { display: false }, tooltip: { callbacks: { title: (items) => labels[items[0].dataIndex], label: (ctx) => ' ' + formatBRL(ctx.raw) } }, datalabels: dataLabelsBarras(rot) }, scales: { x: { ticks: { autoSkip: false, maxRotation: 45, font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { display: false }, grid: { display: false } } } } });
+        }
+
+        // Cálculo compartilhado: % de Insumo vs Faturamento, % de Insumo vs S&OP e % de Faturamento vs S&OP, por mês.
+        function calcularPercentuaisInsumoPrevisao() {
+            const isSOPAtivo = document.getElementById('toggleSOP').checked;
+            const agrupadoInsumo = groupBy(filteredData, 'mes');
+            const agrupadoFat = groupBy(faturamentoFiltrado, 'mes');
+            const agrupadoPrev = isSOPAtivo ? groupBy(previsaoFiltrada, 'mes') : {};
+
+            const mesesComDados = mesesOrdenados.filter(mes =>
+                (agrupadoInsumo[mes] && agrupadoInsumo[mes].length) ||
+                (agrupadoFat[mes] && agrupadoFat[mes].length) ||
+                (agrupadoPrev[mes] && agrupadoPrev[mes].length)
+            );
+            const mesesEixo = mesesComDados.length > 0 ? mesesComDados : mesesOrdenados;
+
+            const dataInsumo = mesesEixo.map(mes => { const itens = agrupadoInsumo[mes] || []; return itens.reduce((acc, val) => acc + val.custoTotal, 0); });
+            const dataFat = mesesEixo.map(mes => { const itens = agrupadoFat[mes] || []; return itens.reduce((acc, val) => acc + val.faturamento, 0); });
+            const dataPrev = mesesEixo.map(mes => { const itens = agrupadoPrev[mes] || []; return itens.reduce((acc, val) => acc + val.valor, 0); });
+
+            const pctFat = mesesEixo.map((_, i) => dataFat[i] > 0 ? (dataInsumo[i] / dataFat[i]) * 100 : null);
+            const pctPrev = mesesEixo.map((_, i) => dataPrev[i] > 0 ? (dataInsumo[i] / dataPrev[i]) * 100 : null);
+            const pctFatPrev = mesesEixo.map((_, i) => dataPrev[i] > 0 ? (dataFat[i] / dataPrev[i]) * 100 : null);
+
+            return { mesesEixo, dataInsumo, dataFat, dataPrev, pctFat, pctPrev, pctFatPrev };
+        }
+
+        // Tooltip compartilhado entre a versão em linhas e a versão em colunas.
+        function tooltipLabelInsumoPrevisao(ctx, calc) {
+            if (ctx.raw === null) return ` ${ctx.dataset.label}: sem dados`;
+            const idx = ctx.dataIndex;
+            let numLabel, numVal, denLabel, denVal;
+            if (ctx.dataset.label === 'Faturamento vs S&OP') {
+                numLabel = 'Faturamento'; numVal = calc.dataFat[idx];
+                denLabel = 'S&OP'; denVal = calc.dataPrev[idx];
+            } else {
+                numLabel = 'Insumo'; numVal = calc.dataInsumo[idx];
+                const isPrev = ctx.dataset.label.includes('S&OP');
+                denLabel = isPrev ? 'S&OP' : 'Faturamento';
+                denVal = isPrev ? calc.dataPrev[idx] : calc.dataFat[idx];
+            }
+            return ` ${ctx.dataset.label}: ${ctx.raw.toFixed(1)}% (${numLabel} ${formatBRL(numVal)} / ${denLabel} ${formatBRL(denVal)})`;
+        }
+
+        // Gráfico de linhas: % de Insumo (dados.csv) em relação ao Faturamento (base_vendas.csv)
+        // e % de Insumo em relação ao S&OP (base_vendas_previsao.csv), por mês.
+        function renderChartInsumoPrevisao() {
+            destroyChart('chartInsumoPrevisao');
+
+            const isSOPAtivo = document.getElementById('toggleSOP').checked;
+            const calc = calcularPercentuaisInsumoPrevisao();
+            const { mesesEixo, pctFat, pctPrev, pctFatPrev } = calc;
+
+            const datasets = [
+                {
+                    label: 'Insumo vs Faturamento',
+                    data: pctFat,
+                    borderColor: '#4aa8ff', backgroundColor: 'rgba(74,168,255,0.12)',
+                    fill: true, tension: 0.3, borderWidth: 2.5,
+                    pointRadius: 4, pointBackgroundColor: '#16122b', pointBorderColor: '#4aa8ff', pointBorderWidth: 2,
+                    spanGaps: false
+                }
+            ];
+
+            if (isSOPAtivo) {
+                datasets.push({
+                    label: 'Insumo vs S&OP',
+                    data: pctPrev,
+                    borderColor: '#ffd84d', backgroundColor: 'rgba(255,216,77,0.12)',
+                    fill: true, tension: 0.3, borderWidth: 2.5, borderDash: [6, 4],
+                    pointStyle: 'rectRot', pointRadius: 4, pointBackgroundColor: '#16122b', pointBorderColor: '#ffd84d', pointBorderWidth: 2,
+                    spanGaps: false
+                });
+                datasets.push({
+                    label: 'Faturamento vs S&OP',
+                    data: pctFatPrev,
+                    borderColor: '#e879f9', backgroundColor: 'rgba(232,121,249,0.12)',
+                    fill: true, tension: 0.3, borderWidth: 2.5, borderDash: [2, 3],
+                    pointStyle: 'triangle', pointRadius: 4, pointBackgroundColor: '#16122b', pointBorderColor: '#e879f9', pointBorderWidth: 2,
+                    spanGaps: false
+                });
+            }
+
+            const ctx = document.getElementById('chartInsumoPrevisao').getContext('2d');
+            chartInstances['chartInsumoPrevisao'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: mesesEixo,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    layout: { padding: paddingLinhas },
+                    plugins: {
+                        legend: { display: true, labels: { color: '#e6e1f7', boxWidth: 12, padding: 14 } },
+                        tooltip: {
+                            mode: 'index',
+                            callbacks: { label: (ctx) => tooltipLabelInsumoPrevisao(ctx, calc) }
+                        },
+                        datalabels: dataLabelsLinhas({
+                            formatter: (value) => value === null ? '' : value.toFixed(1) + '%',
+                            display: (c) => (c.dataset.data[c.dataIndex] === null ? false : 'auto')
+                        })
+                    },
+                    scales: {
+                        x: { grid: { display: true, color: 'rgba(255,255,255,0.05)' } },
+                        y: { beginAtZero: true, grid: { display: true, color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#b3acd0', callback: (val) => val + '%' } }
+                    }
+                }
+            });
+        }
+
+        function renderChartEvolucao() {
+            destroyChart('chartEvolucao');
+            const baseParaEvolucao = globalData.filter(d => matchSet(filterState.filial, d.estado) && matchSet(filterState.grupo, d.grupo) && matchSet(filterState.classe, d.classe) && matchSet(filterState.insumo, d.componente));
+            const dadosPorAno = groupBy(baseParaEvolucao, 'ano');
+            let anos = Object.keys(dadosPorAno).sort();
+            if (filterState.ano.size > 0) { anos = anos.filter(a => filterState.ano.has(a)); }
+
+            let mesesEixo = mesesOrdenados;
+            if (filterState.mes.size > 0) { mesesEixo = mesesOrdenados.filter(m => filterState.mes.has(m)); }
+
+            const isFatActive = document.getElementById('toggleFaturamento').checked;
+            const ctx = document.getElementById('chartEvolucao').getContext('2d');
+
+            // Paleta ampliada + índice contínuo: garante que CADA linha (Gasto, Fat. e S&OP,
+            // de qualquer ano) receba uma cor diferente das demais, em vez de repetir a cor por ano.
+            const evoColorPalette = ['#9b7bff', '#4aa8ff', '#ff9a3d', '#e879f9', '#ff5a4f', '#22d3ee', '#ffd84d', '#7dd3fc', '#f472b6', '#84cc16', '#fb923c', '#38bdf8', '#c084fc', '#facc15', '#f59e0b', '#fb7185'];
+            let evoColorIdx = 0;
+            const proximaCorEvo = () => evoColorPalette[evoColorIdx++ % evoColorPalette.length];
+
+            const datasets = anos.map((ano) => {
+                const mesesAno = groupBy(dadosPorAno[ano], 'mes');
+                const dataValues = mesesEixo.map(mes => mesesAno[mes] ? mesesAno[mes].reduce((acc, val) => acc + val.custoTotal, 0) : 0);
+                const cor = proximaCorEvo();
+                const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+                gradient.addColorStop(0, `rgba(${parseInt(cor.slice(1, 3), 16)},${parseInt(cor.slice(3, 5), 16)},${parseInt(cor.slice(5, 7), 16)},0.28)`);
+                gradient.addColorStop(1, `rgba(${parseInt(cor.slice(1, 3), 16)},${parseInt(cor.slice(3, 5), 16)},${parseInt(cor.slice(5, 7), 16)},0.02)`);
+                return { label: 'Gasto ' + ano, data: dataValues, borderColor: cor, backgroundColor: gradient, fill: true, borderWidth: 2, pointBackgroundColor: '#16122b', pointBorderColor: cor, pointBorderWidth: 2, pointRadius: 4, tension: 0.3 };
+            });
+
+            if (isFatActive) {
+                const dadosFatPorAno = groupBy(globalFaturamento, 'ano');
+                anos.forEach((ano) => {
+                    if (dadosFatPorAno[ano]) {
+                        const cor = proximaCorEvo();
+                        const mesesAnoFat = groupBy(dadosFatPorAno[ano], 'mes');
+                        const dataValuesFat = mesesEixo.map(mes => mesesAnoFat[mes] ? mesesAnoFat[mes].reduce((acc, val) => acc + val.faturamento, 0) : 0);
+                        datasets.push({ label: 'Fat. ' + ano, data: dataValuesFat, borderColor: cor, borderDash: [6, 4], backgroundColor: 'transparent', fill: false, borderWidth: 2, pointBackgroundColor: '#16122b', pointBorderColor: cor, pointBorderWidth: 2, pointRadius: 4, tension: 0.3 });
+                    }
+                });
+            }
+
+            // ===== ADIÇÃO DA LINHA DE S&OP =====
+            const isSOPAtivo = document.getElementById('toggleSOP').checked;
+            if (isSOPAtivo && previsaoFiltrada.length > 0) {
+                const dadosPrevPorAno = groupBy(previsaoFiltrada, 'ano');
+                anos.forEach((ano) => {
+                    if (dadosPrevPorAno[ano]) {
+                        const mesesAnoPrev = groupBy(dadosPrevPorAno[ano], 'mes');
+                        const dataValuesPrev = mesesEixo.map(mes => mesesAnoPrev[mes] ? mesesAnoPrev[mes].reduce((acc, val) => acc + val.valor, 0) : null);
+                        
+                        if(dataValuesPrev.some(v => v !== null && v > 0)) {
+                            const cor = proximaCorEvo();
+                            datasets.push({ 
+                                label: 'S&OP ' + ano, 
+                                data: dataValuesPrev, 
+                                borderColor: cor, 
+                                borderDash: [8, 5], 
+                                backgroundColor: 'transparent', 
+                                fill: false, 
+                                borderWidth: 3, 
+                                pointBackgroundColor: '#16122b', 
+                                pointBorderColor: cor, 
+                                pointBorderWidth: 2, 
+                                pointRadius: 5,
+                                pointStyle: 'rectRot',
+                                tension: 0.4,
+                                spanGaps: false
+                            });
+                        }
+                    }
+                });
+            }
+
+            if (anos.length === 0 || mesesEixo.length === 0) {
+                chartInstances['chartEvolucao'] = new Chart(ctx, { type: 'line', data: { labels: mesesEixo, datasets: [] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+                return;
+            }
+
+            chartInstances['chartEvolucao'] = new Chart(ctx, { type: 'line', data: { labels: mesesEixo, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: paddingLinhas }, plugins: { legend: { display: true, labels: { color: '#e6e1f7', boxWidth: 12, padding: 14 } }, tooltip: { mode: 'index', intersect: false, callbacks: { label: (ctx) => ctx.dataset.label + ': ' + formatBRL(ctx.raw) } }, datalabels: dataLabelsLinhas({ formatter: (val) => val > 0 ? formatCompacto(val) : '' }) }, scales: { y: { beginAtZero: true, ticks: { callback: (val) => 'R$ ' + (val/1000).toFixed(0) + 'k' } } } } });
+        }
+
+        function processarDadosTabela() {
+            const agrupado = groupBy(filteredData, 'componente');
+            tabelaCompleta = Object.keys(agrupado).map(comp => {
+                const itens = agrupado[comp];
+                const quantidadeTotal = itens.reduce((acc, val) => acc + (val.quantidade || 0), 0);
+                const custoTotalItens = itens.reduce((acc, val) => acc + val.custoTotal, 0);
+                const precoMedio = quantidadeTotal > 0 ? custoTotalItens / quantidadeTotal : 0;
+                const ultimoItem = itens.reduce((maisRecente, atual) => {
+                    const chaveAtual = parseInt(atual.ano) * 100 + atual.mesIndex;
+                    const chaveRecente = parseInt(maisRecente.ano) * 100 + maisRecente.mesIndex;
+                    return chaveAtual >= chaveRecente ? atual : maisRecente;
+                }, itens[0]);
+
+                // Detalhamento de custo por Filial (estado)
+                const custoPorFilialMap = {};
+                itens.forEach(i => { custoPorFilialMap[i.estado] = (custoPorFilialMap[i.estado] || 0) + i.custoTotal; });
+                const porFilial = Object.keys(custoPorFilialMap)
+                    .map(f => ({ filial: f, custo: custoPorFilialMap[f] }))
+                    .sort((a, b) => b.custo - a.custo);
+
+                return { componente: comp, classe: itens[0].classe, grupo: itens[0].grupo, qtd: itens.length, quantidadeTotal: quantidadeTotal, custo: custoTotalItens, precoMedio: precoMedio, ultimoFornecedor: ultimoItem.fornecedor, porFilial: porFilial };
+            }).sort((a, b) => b.custo - a.custo);
+
+            const custoTotalGeral = tabelaCompleta.reduce((acc, item) => acc + item.custo, 0);
+            let acumulado = 0;
+            tabelaCompleta.forEach(item => {
+                acumulado += item.custo;
+                const pctAcumulado = custoTotalGeral > 0 ? acumulado / custoTotalGeral : 0;
+                item.classeABC = pctAcumulado <= 0.8 ? 'A' : (pctAcumulado <= 0.95 ? 'B' : 'C');
+            });
+
+            currentPage = 1; document.getElementById('searchInput').value = ''; aplicarBuscaETabela();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function(e) { currentPage = 1; aplicarBuscaETabela(); });
+
+        function aplicarBuscaETabela() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            if (term) { tabelaFiltrada = tabelaCompleta.filter(item => item.componente.toLowerCase().includes(term) || item.classe.toLowerCase().includes(term) || item.grupo.toLowerCase().includes(term)); } 
+            else { tabelaFiltrada = [...tabelaCompleta]; }
+            renderizarPaginaTabela();
+        }
+
+        function renderizarPaginaTabela() {
+            const tbody = document.getElementById('tabelaRanking');
+            const totalItems = tabelaFiltrada.length; const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            const startIndex = (currentPage - 1) * itemsPerPage; const endIndex = startIndex + itemsPerPage;
+            const itensPagina = tabelaFiltrada.slice(startIndex, endIndex);
+
+            if(totalItems === 0) { tbody.innerHTML = '<tr><td colspan="10" class="py-4 text-center text-[#7a7499]">Nenhum insumo encontrado.</td></tr>'; } 
+            else {
+                const abcStyles = { A: 'bg-accentOk/14 text-accentOk border-accentOk/30', B: 'bg-accentOrange/14 text-accentOrange border-accentOrange/30', C: 'bg-accentRed/14 text-accentRed border-accentRed/30' };
+                tbody.innerHTML = itensPagina.map((l, idx) => {
+                    const rowId = `filial-detail-${idx}`;
+                    const porFilial = l.porFilial || [];
+                    const filialRowsHtml = porFilial.map(f => `
+                        <div class="flex items-center justify-between py-1.5 px-3 border-b border-white/5 last:border-0">
+                            <span class="text-xs text-[#b3acd0] font-mono">${f.filial}</span>
+                            <span class="text-xs font-mono font-semibold text-accentBrand">${formatBRL(f.custo)}</span>
+                        </div>
+                    `).join('') || '<div class="py-2 px-3 text-xs text-[#7a7499]">Sem dados por filial.</div>';
+
+                    return `
+                    <tr class="border-b border-[rgba(255,255,255,0.04)] hover:bg-white/5 transition-colors">
+                        <td class="py-3 px-2 text-center">
+                            <button type="button" class="toggle-filial-btn w-6 h-6 inline-flex items-center justify-center rounded-md border border-white/10 text-[#b3acd0] hover:text-accentBrand hover:border-accentBrand/40 transition-all duration-200" data-target="${rowId}" aria-expanded="false" title="Ver custo por Filial">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </button>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-[#f5f2ff]">${l.componente}</td>
+                        <td class="py-3 px-4 text-[#b3acd0] text-xs font-mono">${l.classe}</td>
+                        <td class="py-3 px-4 text-[#b3acd0] text-xs font-mono">${l.grupo}</td>
+                        <td class="py-3 px-4 text-[#b3acd0] text-xs font-mono">${l.ultimoFornecedor}</td>
+                        <td class="py-3 px-4 text-right text-[#b3acd0] font-mono">${formatBRL(l.precoMedio)}</td>
+                        <td class="py-3 px-4 text-right text-[#b3acd0] font-mono">${l.qtd}</td>
+                        <td class="py-3 px-4 text-right text-[#b3acd0] font-mono">${l.quantidadeTotal.toLocaleString('pt-BR')}</td>
+                        <td class="py-3 px-4 text-right font-mono font-semibold text-accentBrand">${formatBRL(l.custo)}</td>
+                        <td class="py-3 px-4 text-center"><span class="inline-flex items-center justify-center w-6 h-6 rounded-md border font-mono font-bold text-xs ${abcStyles[l.classeABC]}">${l.classeABC}</span></td>
+                    </tr>
+                    <tr id="${rowId}" class="hidden bg-black/20">
+                        <td class="py-0 px-2"></td>
+                        <td colspan="9" class="px-4 pb-3 pt-0">
+                            <div class="rounded-lg border border-white/10 bg-white/[0.03] px-1 py-1 mt-1">
+                                <p class="text-[10px] uppercase tracking-wider text-[#7a7499] font-semibold px-3 pt-2 pb-1">Custo por Filial — ${l.componente}</p>
+                                ${filialRowsHtml}
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+            }
+            document.getElementById('tableInfo').innerText = `Mostrando ${itensPagina.length > 0 ? startIndex + 1 : 0} a ${Math.min(endIndex, totalItems)} de ${totalItems} insumos`;
+            document.getElementById('pageIndicator').innerText = `Página ${currentPage} de ${totalPages}`;
+            document.getElementById('btnPrev').disabled = (currentPage === 1); document.getElementById('btnNext').disabled = (currentPage === totalPages);
+        }
+
+        // Expandir/recolher detalhamento de custo por Filial em cada linha
+        document.getElementById('tabelaRanking').addEventListener('click', function(e) {
+            const btn = e.target.closest('.toggle-filial-btn');
+            if (!btn) return;
+            const target = document.getElementById(btn.dataset.target);
+            if (!target) return;
+            const isHidden = target.classList.contains('hidden');
+            target.classList.toggle('hidden');
+            btn.classList.toggle('rotate-45', isHidden);
+            btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+        });
+
+        document.getElementById('btnPrev').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderizarPaginaTabela(); }});
+        document.getElementById('btnNext').addEventListener('click', () => { const totalPages = Math.ceil(tabelaFiltrada.length / itemsPerPage); if (currentPage < totalPages) { currentPage++; renderizarPaginaTabela(); }});
+
+        // =========================================================================
+        // EXPORTAR RELATÓRIO EM PDF — DOWNLOAD DIRETO
+        // Captura cada bloco do relatório (cabeçalho, filtros, KPIs, TODOS os gráficos,
+        // projeção e tabela) com html2canvas, exatamente como está na tela, e monta um
+        // PDF A4 paisagem com jsPDF. O arquivo baixa sozinho, sem janela de impressão.
+        // Se as bibliotecas não carregarem (sem internet), cai no plano B: window.print().
+        // =========================================================================
+        const PDF_LIB_HTML2CANVAS = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        const PDF_LIB_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
+        const esperar = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function carregarScriptExterno(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = () => resolve();
+                s.onerror = () => reject(new Error('não foi possível carregar ' + src));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function garantirLibsPDF() {
+            if (!window.html2canvas) await carregarScriptExterno(PDF_LIB_HTML2CANVAS);
+            if (!window.jspdf) await carregarScriptExterno(PDF_LIB_JSPDF);
+            if (!window.html2canvas || !window.jspdf) throw new Error('bibliotecas de PDF indisponíveis');
+        }
+
+        function abrirOverlayPDF() {
+            const el = document.createElement('div');
+            el.id = 'pdfOverlay';
+            el.innerHTML = '<div class="loader"></div><span id="pdfOverlayTexto">Preparando o relatório...</span>';
+            document.body.appendChild(el);
+            return el;
+        }
+        function atualizarOverlayPDF(texto) {
+            const t = document.getElementById('pdfOverlayTexto');
+            if (t) t.innerText = texto;
+        }
+
+        // Blocos que entram no PDF, na mesma ordem em que aparecem na página.
+        function blocosDoRelatorio() {
+            const area = document.getElementById('reportCaptureArea');
+            const blocos = [];
+            const header = area.querySelector('header');
+            if (header) blocos.push(header);
+            area.querySelectorAll(':scope > section').forEach(sec => blocos.push(sec));
+            return blocos;
+        }
+
+        async function exportarRelatorioPDF() {
+            const btn = document.getElementById('btnExportarPdf');
+            const label = document.getElementById('btnExportarPdfLabel');
+            const textoBotao = label.innerText;
+            const scrollAnterior = window.scrollY;
+            let overlay = null;
+
+            btn.disabled = true;
+            label.innerText = 'PREPARANDO...';
+
+            try {
+                overlay = abrirOverlayPDF();
+                await garantirLibsPDF();
+
+                // Fecha painéis de filtro abertos e sobe ao topo (a captura usa a posição real dos elementos).
+                document.querySelectorAll('.multiselect-panel').forEach(pn => pn.classList.add('hidden'));
+                document.querySelectorAll('[data-ms-wrapper]').forEach(w => w.classList.remove('ms-active'));
+                window.scrollTo(0, 0);
+                document.body.classList.add('exportando-pdf');
+
+                // Redesenha os gráficos em resolução dobrada para o PDF não sair pixelado.
+                const graficos = Object.values(chartInstances).filter(Boolean);
+                graficos.forEach(c => { c.options.devicePixelRatio = 2; c.resize(); });
+                await esperar(450);
+
+                const blocos = blocosDoRelatorio();
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+                const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const margem = 8;
+                const alturaRodape = 7;
+                const larguraUtil = pageW - margem * 2;
+                const alturaUtil = pageH - margem * 2 - alturaRodape;
+
+                const pintarFundo = () => { doc.setFillColor(11, 9, 24); doc.rect(0, 0, pageW, pageH, 'F'); };
+                pintarFundo();
+                let y = margem;
+
+                for (let i = 0; i < blocos.length; i++) {
+                    atualizarOverlayPDF('Capturando bloco ' + (i + 1) + ' de ' + blocos.length + '...');
+                    label.innerText = 'GERANDO ' + (i + 1) + '/' + blocos.length;
+
+                    const canvas = await window.html2canvas(blocos[i], {
+                        backgroundColor: '#100d22',
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        scrollX: 0,
+                        scrollY: 0
+                    });
+                    if (!canvas.width || !canvas.height) continue;
+
+                    let w = larguraUtil;
+                    let h = (canvas.height * larguraUtil) / canvas.width;
+                    if (h > alturaUtil) { h = alturaUtil; w = (canvas.width * alturaUtil) / canvas.height; }
+
+                    // Bloco não cabe no que sobrou da página? Vai inteiro para a próxima (nunca corta um gráfico).
+                    if (y > margem && (y + h) > (margem + alturaUtil)) { doc.addPage(); pintarFundo(); y = margem; }
+
+                    doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', margem + (larguraUtil - w) / 2, y, w, h, undefined, 'FAST');
+                    y += h + 5;
+                }
+
+                atualizarOverlayPDF('Finalizando o arquivo...');
+                const agora = new Date();
+                const dataBR = agora.toLocaleDateString('pt-BR');
+                const totalPaginas = doc.internal.getNumberOfPages();
+                for (let pg = 1; pg <= totalPaginas; pg++) {
+                    doc.setPage(pg);
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 144, 184);
+                    doc.text('Relatório Curva ABC - Orla Bebidas | gerado em ' + dataBR, margem, pageH - 4);
+                    doc.text('Página ' + pg + ' de ' + totalPaginas, pageW - margem, pageH - 4, { align: 'right' });
+                }
+
+                const carimbo = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0') + '-' + String(agora.getDate()).padStart(2, '0');
+                doc.save('Relatorio-Curva-ABC-OrlaBebidas-' + carimbo + '.pdf');
+            } catch (erro) {
+                console.error(erro);
+                alert('Não foi possível gerar o PDF automaticamente (' + erro.message + '). Vou abrir a impressão do navegador: escolha "Salvar como PDF" como destino.');
+                window.print();
+            } finally {
+                document.body.classList.remove('exportando-pdf');
+                Object.values(chartInstances).filter(Boolean).forEach(c => { delete c.options.devicePixelRatio; c.resize(); });
+                if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                window.scrollTo(0, scrollAnterior);
+                btn.disabled = false;
+                label.innerText = textoBotao;
+            }
+        }
+
+        document.getElementById('btnExportarPdf').addEventListener('click', exportarRelatorioPDF);
+    </script>
+</body>
+</html>
