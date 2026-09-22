@@ -1623,8 +1623,7 @@
                     // Bloco não cabe no que sobrou da página? Vai inteiro para a próxima (nunca corta um gráfico).
                     if (y > margem && (y + h) > (margem + alturaUtil)) { doc.addPage(); pintarFundo(); y = margem; }
 
-                    doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', margem + (larguraUtil - w) / 2, y, w, h, undefined, 'FAST');
-                    y += h + 5;
+                
                 }
 
                 atualizarOverlayPDF('Finalizando o arquivo...');
