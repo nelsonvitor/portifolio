@@ -17,8 +17,8 @@
                         mono: ['JetBrains Mono', 'monospace']
                     },
                     colors: {
-                        darkBg: '#f4f7fc', cardBg: '#ffffff',
-                        accentGreen: '#2563eb', accentBlue: '#0ea5e9',
+                        darkBg: '#dbe4f3', cardBg: '#ffffff',
+                        accentGreen: '#1d4ed8', accentBlue: '#0284c7',
                         accentOrange: '#f59e0b', accentPurple: '#8b5cf6',
                         accentRed: '#ef4444'
                     }
@@ -43,12 +43,12 @@
         .fade-up { animation: fadeUp 0.6s ease both; }
 
         .orb { position: fixed; border-radius: 9999px; filter: blur(90px); opacity: 0.16; z-index: -1; pointer-events: none; }
-        .orb-1 { width: 500px; height: 500px; background: #2563eb; top: -10%; left: -5%; animation: float 26s ease-in-out infinite; }
-        .orb-2 { width: 480px; height: 480px; background: #0ea5e9; top: -5%; right: -8%; animation: float 30s ease-in-out infinite reverse; }
+        .orb-1 { width: 500px; height: 500px; background: #1d4ed8; top: -10%; left: -5%; animation: float 26s ease-in-out infinite; }
+        .orb-2 { width: 480px; height: 480px; background: #0284c7; top: -5%; right: -8%; animation: float 30s ease-in-out infinite reverse; }
         .orb-3 { width: 420px; height: 420px; background: #f59e0b; bottom: -12%; left: 35%; animation: float 22s ease-in-out infinite; }
 
         body {
-            background-color: #f4f7fc;
+            background-color: #dbe4f3;
             color: #0f172a;
             background-attachment: fixed;
             overflow-x: hidden;
@@ -60,7 +60,7 @@
             box-shadow: 0 4px 20px rgba(15,23,42,0.25);
             transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
         }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(15,23,42,0.35); background-color: #f8fafc; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(15,23,42,0.35); background-color: #eaf0f9; }
         .glow-text { text-shadow: 0 0 12px rgba(37, 99, 235, 0.35); }
         .card-divider { border-top: 1px solid rgba(15,23,42,0.04); }
 
@@ -74,36 +74,36 @@
         .icon-badge svg { width: 15px; height: 15px; }
 
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f4f7fc; }
+        ::-webkit-scrollbar-track { background: #dbe4f3; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         .search-input {
-            background-color: #f4f7fc; border: 1px solid rgba(15,23,42,0.07); color: #0f172a;
+            background-color: #dbe4f3; border: 1px solid rgba(15,23,42,0.07); color: #0f172a;
             padding: 8px 16px 8px 40px; border-radius: 10px; font-size: 14px;
             outline: none; transition: border-color 0.2s; width: 100%; max-width: 300px;
         }
-        .search-input:focus { border-color: #2563eb; }
+        .search-input:focus { border-color: #1d4ed8; }
         
         /* Spinner de carregamento */
         .loader {
-            border: 3px solid rgba(37, 99, 235, 0.2); border-top: 3px solid #2563eb;
+            border: 3px solid rgba(37, 99, 235, 0.2); border-top: 3px solid #1d4ed8;
             border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* ===== Filtro multi-seleção ===== */
         .multiselect-btn {
-            width: 100%; background-color: #f4f7fc; border: 1px solid rgba(15,23,42,0.07); color: #0f172a;
+            width: 100%; background-color: #dbe4f3; border: 1px solid rgba(15,23,42,0.07); color: #0f172a;
             font-size: 14px; border-radius: 10px; padding: 10px 12px;
             display: flex; align-items: center; justify-content: space-between; gap: 8px;
             outline: none; transition: border-color 0.2s, box-shadow 0.2s; cursor: pointer;
         }
         .multiselect-btn:hover { border-color: rgba(15,23,42,0.15); }
-        .multiselect-btn.active { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+        .multiselect-btn.active { border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,0.12); }
         .multiselect-btn span.ms-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
         .multiselect-btn svg { flex-shrink: 0; transition: transform 0.2s ease; color: #94a3b8; }
-        .multiselect-btn.active svg { transform: rotate(180deg); color: #2563eb; }
+        .multiselect-btn.active svg { transform: rotate(180deg); color: #1d4ed8; }
 
         [data-ms-wrapper] { z-index: 1; }
         [data-ms-wrapper].ms-active { z-index: 100; }
@@ -111,7 +111,7 @@
         .multiselect-panel {
             position: absolute; top: calc(100% + 8px); left: 0; z-index: 100; width: 100%; min-width: 220px;
             background-color: #ffffff; border: 1px solid rgba(15,23,42,0.08); border-radius: 12px;
-            box-shadow: 0 12px 40px rgba(15,23,42,0.45), 0 0 0 1px rgba(37,99,235,0.04);
+            box-shadow: 0 12px 40px rgba(15,23,42,0.45), 0 0 0 1px rgba(29,78,216,0.04);
             padding: 10px; animation: msPop 0.15s ease;
         }
         @keyframes msPop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
@@ -121,9 +121,9 @@
         }
         .multiselect-actions button {
             font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
-            color: #2563eb; background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+            color: #1d4ed8; background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px;
         }
-        .multiselect-actions button:hover { color: #1d4ed8; background: rgba(37,99,235,0.08); }
+        .multiselect-actions button:hover { color: #1e3a8a; background: rgba(29,78,216,0.08); }
         .multiselect-options { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
         .ms-option {
             display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px;
@@ -131,7 +131,7 @@
         }
         .ms-option:hover { background-color: rgba(15,23,42,0.05); }
         .ms-option input[type="checkbox"] {
-            width: 15px; height: 15px; accent-color: #2563eb; cursor: pointer; flex-shrink: 0;
+            width: 15px; height: 15px; accent-color: #1d4ed8; cursor: pointer; flex-shrink: 0;
         }
         .hidden { display: none; }
 
@@ -143,7 +143,7 @@
             white-space: nowrap;
         }
         .nav-pill:hover { background: rgba(15,23,42,0.08); color: #0f172a; }
-        .nav-pill.active { color: #ffffff; background: #2563eb; border-color: #2563eb; }
+        .nav-pill.active { color: #ffffff; background: #1d4ed8; border-color: #1d4ed8; }
 
         /* ===== Exportação em PDF (download direto) ===== */
         /* Enquanto o PDF é gerado, a página fica "limpa": sem orbs, sem painel flutuante,
@@ -167,7 +167,7 @@
         /* Impressão nativa continua disponível como plano B (Ctrl+P). */
         @media print {
             @page { size: A4; margin: 10mm; }
-            html, body { background: #f4f7fc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+            html, body { background: #dbe4f3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
             .orb, #painelFixoToggles, nav.mb-5, .search-wrap, .multiselect-panel,
             #btnPrev, #btnNext, #pageIndicator, .card:hover { display: none !important; }
             * { animation: none !important; transition: none !important; box-shadow: none !important; }
@@ -185,7 +185,7 @@
 
     <!-- PAINEL FIXO DE TOGGLES + EXPORTAR PDF: permanece visível mesmo ao rolar a página -->
     <div id="painelFixoToggles" class="fixed bottom-6 right-6 z-[60] flex flex-col sm:flex-row items-end sm:items-center gap-3 fade-up">
-        <label class="flex items-center gap-2 cursor-pointer bg-[#ffffff]/95 backdrop-blur-sm border border-[#2563eb]/40 px-4 py-2.5 rounded-xl text-sm font-medium text-[#0f172a] hover:border-[#2563eb] transition-all shadow-[0_4px_20px_rgba(15,23,42,0.4),0_0_15px_rgba(37,99,235,0.15)]">
+        <label class="flex items-center gap-2 cursor-pointer bg-[#ffffff]/95 backdrop-blur-sm border border-[#1d4ed8]/40 px-4 py-2.5 rounded-xl text-sm font-medium text-[#0f172a] hover:border-[#1d4ed8] transition-all shadow-[0_4px_20px_rgba(15,23,42,0.4),0_0_15px_rgba(29,78,216,0.15)]">
             <input type="checkbox" id="toggleFaturamento" class="w-4 h-4 accent-accentGreen cursor-pointer" checked>
             FATURAMENTO
         </label>
@@ -195,8 +195,8 @@
             S&amp;OP
         </label>
 
-        <button type="button" id="btnExportarPdf" title="Gera e baixa o PDF do relatório completo, com todos os gráficos como aparecem na tela" class="flex items-center gap-2 cursor-pointer bg-[#ffffff]/95 backdrop-blur-sm border border-[#0ea5e9]/40 px-4 py-2.5 rounded-xl text-sm font-medium text-[#0f172a] hover:border-[#0ea5e9] transition-all shadow-[0_4px_20px_rgba(15,23,42,0.4),0_0_15px_rgba(14,165,233,0.15)] disabled:opacity-60 disabled:cursor-wait">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+        <button type="button" id="btnExportarPdf" title="Gera e baixa o PDF do relatório completo, com todos os gráficos como aparecem na tela" class="flex items-center gap-2 cursor-pointer bg-[#ffffff]/95 backdrop-blur-sm border border-[#0284c7]/40 px-4 py-2.5 rounded-xl text-sm font-medium text-[#0f172a] hover:border-[#0284c7] transition-all shadow-[0_4px_20px_rgba(15,23,42,0.4),0_0_15px_rgba(2,132,199,0.15)] disabled:opacity-60 disabled:cursor-wait">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -215,7 +215,6 @@
     <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 fade-up">
         <div>
             <h1 class="text-3xl font-heading font-bold text-[#0f172a] tracking-tight glow-text flex items-center gap-3">
-                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANcAAABiCAYAAADDekZzAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyVpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTQ4IDc5LjE2NDAzNiwgMjAxOS8wOC8xMy0wMTowNjo1NyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MzI5MzYzRThCRjcyMTFFREFENjVGMEM4N0M3RUExRjMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MzI5MzYzRTdCRjcyMTFFREFENjVGMEM4N0M3RUExRjMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDIzLjEgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpGQTk1NjYzQkM1OTMxMUVDQTEyOEM0RDVENDA5OUMzOCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpGQTk1NjYzQ0M1OTMxMUVDQTEyOEM0RDVENDA5OUMzOCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pg14TWUAABi5SURBVHja7F0JnBxVmf/q6JnJHElISEKi4TQLciwIIrsCoogihyAsrLqCuyIKMQvLtegiSsLKKiJXdiHrglyrLCwoRpBLRE6DnIkoIQhLiCFhSAjJzGQy03W8/f5VX3VXd7p7qvqYdE/e//f7prunq6qrXn3/9x3ve68MpRRpaGjUH6ZuAg0NTS4NDU0uDQ0NTS4NDU0uDQ1NLg0NDU0uDQ1NLg0NTS4NDQ1NLg0NTS4NDU0uDQ0NTS4NDU0uDQ1NLg0NjULYtR7AuPW2Rp3buSzbsMxneZvlSpYOlrksvdWdLNG+jktnDvTTgKH7FY1kmDP7tDFnuXZmOZVlD/m8kQVX+TOWvfUt19BuYW3nNpXl/fL5UZZXWf6a5XaWT+rbpzG2yWUUSf0wVY4IK9XD8muW5+V/f8Hy3yyn6FuoMXbJtbIvL2sGifqHibJePVzCGfL+YHENfZZn5dUQ8l3Fcra+jRpj1C1UecFiN/VZ72Z/lpnyflexVMDvxTWMAIt2sSaYho65kuNwlumxc4zirt+xvFy0bTfLt1jm6NupoclVGUewfKTo3HYSsrHvSS+V2GcbIdjJ+pZqNAvsJjynLwmZ4tiBZRrLapbnWFbFYrII+P58lhUUZharxWSW2SztVC8nN4wRsyzr5dyXsyxjGajDsbdnOVbawxnF+5Rh+U9pb1Who/wgS9sIbdnF8gjLQyybUpwDvJajWfZlGUq4jyXn8gTL/UVc+IKEIFnRs3vGErkukBtSbFG3E+sEPM3yYglyAbuzXMTytRLuY65l2zk27DfKJje3ZfmXBl0fkjGuCKzwH1juY7lVPlcDdESny+torvBqiHKuZCmXwTpaFDaTwIMax7IoJblOE4+lLcW141yWslwT+x+8ostZfsPyEznep1mOk4422+rkOklI0V3iu/EsnfJ+pSQ1Di9zk5BdPEsUbrPcyzO2Tdd1d9NJGzfSYPkqDXzR0eDr3Vaszkfluq9jWSDES0tYW5RzS0CN8N04UdYkupimczie5duiG2mwXHTtLfmMpNg/sjwjxzqPZVCs8uHy3RWtHHN9nsKyphllvm+P9X5Qpj+yDFe4SZ8XhS3Z3/YyqYzKCuGN0nXbckP3YvmOWIJ9qlBuvwmJFd0rP8WxkpLrMJYfVEGstRRW/bwovwU12EU6uVvku6Xi6v47y/Vyb1o2oQGz+z25SCNhw78qDVAOaHQMMO9XzjVsQuCcP8ZyJ8shOh1QFlD2S0rE5SOhn+Ucie3iLiJcwl6Jf7vEkzhI3NMNKd3UpiEXXIV/kxhp+xG23VhkqV4T814JqOz4crkfHucrasJHUJjSycyXIF2jEDuKhd8v5X7QnctY/rfIK4EL/q7E9EgGTZSEEwoU/izbTGw1cv0ly10sZ1KY5RsJyBKui31ekYBctiRHjii2gc9y3HUTx12dvt+sSoT2uVCUSSPEJGmTT6V0PhyJZa8uEUpAAf5PrBbisDkSc51I4ZgqZma83krk+nvJyHxKzHASvFLkBroJyEViEU/Z7Gaw8/maaZFpNLUyHUlhtk0jxJkSS7el3O9eln+l8tnYtUK+I8WC7Ubh0M9u4v1c0wrkmikB4qUse6b8bfQia0pkfdYnuD5U0R9TyjVsciCJ8xnKl341I0ZLf5Cx+yfKZ4yT4jGxRutGSLq8KOHJKol7oTNPiqVcVe1Jj1YqHinNeRJHZFLuixTpQ7R5Bg/m+o0EPjEC1uPFDS2IZOEWDlgmNbEBO1B6z1fqdDwlVt+j2ucw2DQ6WdXjRMnTxj7I+mEc7M0E24JgyyT86JF2ereWZMZokQtVE19heV+V+98gDVWMt6QxRpo4id51H9luSaRii22LftzVTccODtKQadairFcnuIFThCgHpjw+xtpQ4bCQqhzILAKyYt+VXrlW441G+z01dhjgY5LAmJZyP4yFYqzz5ZT79VH1g/mjSi70APPFtZlYA7Fuo9JlPesTuIURZkmQuiQedy22M3R8bf23knN8lSqP0bQLwTDB85KU7bGrxAIr6nBPUCL0AoWlPc0OTDOaS2HVTRqslQ79oS19AY0i13QJBI+h6oeVFkqvVY5AGyl5bR6U+8MUVgvkTH1nfZ4H7SVwH6DUG4Qgu0mSJWkyB6ScVCdyGU0ebkZd3XsljEhr6XEfUE3xU9pyA+sNDUin82XdQp46jpuqWmJhnYxvUOU0qCMES4r3sHygAdebSRG/wLW7mfKlN0nQRfUtxWrWENMUcnRIjHV0yo4ZaXZUVSyokwvdZOQyuFdU6hry/MNYOHRW1dxKZBTPTeAvK0peCR1ZgP2boM1fkmA5DRnMrYBcsOyo6UN27yTxNtIACavLUoQKreAWGnld9/zLyDCOyX0OipbMsP8xjCSNi3qx/6JwKbWkliApJlB+Jakt7fqkUfAhKl9HWY0L29ek5PIkCXFWCpc5woMUzqhY20wXVDO5uofCXMNAxjqK3dxTmFBWYWivwo63MsGWSKB/D9WY/hzBSu8k1+xuwTZHciVNwem7dSQEXC7U5vVT+iGReOewvAEWAin3HknepMFiIeTrzdZb1EyuHs8jQ1Ena+u8IbK6gzjSiBErt8SGEMwyivNqd1C40Mxvq/j5tDEdEgOYDNlbxzZM62b9rcR/SQGlWVmnc8U0l68LMWqpX/4mywN1ThrMqmKfF+R6ljajKa6ZXJ1DLvm2eeokRfuuM+DDWGGb+2IsAmLxH1+FBIOYgRXDqDnGiG6oQXnS+uWdoti9dYw8einZVAlkKk8WSVppAFfpuTpac2QK31eH40xugtgN7jKW1/tVk7q5tZPLcv12U9Hppk3GNq4R+DABwZR0aiq2KlREMstYRrZ5ERPsrhoyOxalKYeBKviqnc9jcmRUzdyUnpqsFirvV4+wDVwdDAYfLNYzKVCW82wT6o3TBOeA+4+Kn6kpYvQWS2h4/gdZe2YhnIKmG0ygPtZZlBWFZDLzrqHPG/n+A2TY3+dPD9chfkgW+Eak9lSG3+fiHdPza512AuKcJ8pWiqUReydU2dZ3U1iWo7E5EDOirO1NcVO9MUeujOsfxldlKSPv+7AlC9ap2MDEcm3RMY/FNm5mYmFi5Mt1OPfxJRMDseRl6Iri1Rdy+Ta/5qydwdbVqN25mdCge4O1Qv6ngQmesQDcy69KB3Tj2LNcrr+vpcIwyg08QEUdLBaLzV9s5NeBIJmhFpBlzU1kwpMovAqC88kF//NVEbEiUonl8jFDMl+W4WJDoymHfdAbX9KsgXqTAQsXoeAAJWiPjzVy7aSCsWImE+uuq8Lxzgz/02TJ+IFc9W6HjZVxRx48xe5YDtsbwWEzjZksO+T8OhUjV2SpcomUiGC+y59zVR2Bta3nAmr1AaY4YEWjB5pYoZttEjem5cwTK/bq2CGX40/EKmWK6WUoGURC01sGWUHuQt3ohnNlko3VZJkYw15IikorapjGjiwzwnS/kSdSQC75U2C1AtJlebsNuYjYpPT5xsYCyQsMpN/ZjDFEDOOa8JywkCyWxDubmmSgvB6WazCwXLbJeuuHBAuMhEG+R0/7bebFrmn0BdN+eRvKWPzK0mZh38I+EGNgg0xF1wvdNVXBcXTVzryBHTIwslJU9KqK465hfp+bdNlus72t/DujhaViqbB+4TMN/B1kZjFuhmGQWsa53mpCcuF6Pkvh3LdLxwS5TNdb4Ss1i4MZ01BmoNPIGFqW6VqGf6GnzOUTPJ/sYZccJpfFxAIRodG975nAJLNDomX4fxuGiYbckAiVA6+p/EOzCkyZT4Xpfuzv5wnWwcfsUmqQzy2Ye7VJId0YFYlvMXY9RWGRMgj1GDW+knutWMZnayAXGu01aoKq8xLoEsuFhNnClidXxvUXO0SHRcbCCASKTb9VtvGkxfFTht28LpUNvsNG2LZtk0O92/UQTeyg8YtX06R1G2nV+HGUbbdG9upN2oNMc7dwm/iTVVRBlhAxYDf/XhsTy/ZhUdUay/eDuK9dgc91qYeN9wRpsyOwJFgMdLSKTTHwigmOi1sgUQHXDuN8GPROM1lymsRfb2zp66x9ENlR9xm+f56TgU6rQBRbMMP0f86WzCOj9GqPsGKTV/WRWj1Auzy+nDre6Cd15C70xowe6h7yQqaWOmGMoZnGB1xL7RQdFMRRzNxM4JLCSoXZSkte8T2fo8tUehXGFSQPMpxIHtY+WfIHkoRAjPQ5SjcHCXECZgZfQOkq5WtxnSZQawDVFyjiRrnYP1O6eWh7C8FO25IubO0xl1KLTEe9xNzaw+M4CzNN4NWxEr+sHL9sgazL8c4Oz66ijlUD5LO1cqZ1UteaQdplyCG3p4OcDmszRoIU7GtOZIIdQG4QveUSjPguyE4Gr35AcssP4zEjTMO/y9ssUZaRO1YdHBsc5VrpJYEnxM1Ls2Allt1eTmF95fAo3HPVAsS6Tzqt5RIfotj4mJTHwOpi50mSw2lJchmeGmJN/q6p6CbDNmxYHMRc/HdTuXurLJMy/VlqWzsUEEshGcJK37NiA/W4Pg3uPZUG28aR5apCCxYUfBif8CzjIMPPEwt1FmYUbwlx7MCKkhArGBboZXkicMSMcFucbh0q5MZTLqsSuCFIo2Od8e4UxzhbEg13tIjyNxIviCVfLp9Rd4phnB0o3YPm28RyLRPXe9RRc9ChmAxKqZ+Q491qOj5lsix49fzxLAYL5QSxDxIJfVka9/amQMFVNIgLDjDJ/M4MWUy8zrWDZK/fRMYgdzrDLplZl5TvT2D37jg7603PuBzLsRjBq8uvvA2fi+nwe8ejINbjV9vxgvOxHP8Vw/WXGXweRrAdv3ojJk6qaUOsyTg/JUkQJ2D27QFbObGQiDinRKyE4uVvU/plzrqlXT/ckuTK6aavLlBZ7xGDldZkxWZl3tUc9mwWisTudwKLlXlnKHTLSlVHsAVrW7uJOv/cR+3sMmbWD1FmIEvWJvYDs96RTJpDQZxCCUltO6GAVCCQwd+BaIbjvsMkvDuenvfYKg45qlEFGliE8u6U++wlccJ7t1JivSnX/0iZ738pndbGlMfFwrDfp/rMBhhlcsUah1212UywOwlWwfH+hpV7XKTgGLuyNjBJ1oQz8yslEuAi+hl2FTOhuwg3kkm8MxNmNhNpmhUeP7RQeM3ic0gmE++zQiwMRvN7PqcXOP5bGBCOxedtJ7JHuNcUju38hnhhQ+LrP59yv0+KS7TNVkiuX1PlqhQkjH5E4Vhg2puGRT7nUvqnojQNuQKzzhbpVFb0q1TWR0+xa2CL2EKYw37oAtrpTEVACM+fyK8XMpkOjkhVLAQBoViYTORD+H/KcQfZdb0XCY2g8oP/77CbOYXP46CZ3ZR1GxbivCREWZ1yPzz1BatDtW9l5NqQIMWEcTpkVx+tQs+xtN6cViZX0EhMsLM5/jmfSZVhF9Ewh1yOo5wg0ZHW5WRiTFJD7rl+1j+RJSRNIH5MQiulnFBypGNistu4iC3dHRbiLBEb1gtuoes3um4XPfF/UPrKdizdfDQRGVsRuTCFKMnA9utihdLWECLBgVnLn26ZbGFZ186kG0AmY9hHIcR4tl/rqjjMDsz+M5SnWLyK4xwKY1oUFhCTVImwm/q2qdQC3zBWUs5CGUEyw20z88mUxgI9LVLzX6LkVREzJeuITNnvthJypel5YblQr4qZ7Num2A9jfEjxv0alH1zf9JYrVGFHSQUvllsLlso6hJIPBCLmONT06Qq2OufajteWccLsXzlpY8K0OZKpxPth38lkfaS2fxpcJWobTSOI9Xo6bZo1vYs8X42W0oAoT6bcD2lnTAKcThql8HMKhzzSjg2igh4Lh05r9Ak2xHJBga1hP5qHG1UoX0mmuksCVzxYbL24S9Hzh7HyD+Zn7cxW5+PKUV8wDbWNSXHnyCiYC1nwzo+2CCwW0vwPs883H36f6eUt1LCnaPp2bfSRPbeld/qy5dzCerPuLelpsWDlbin2gwvzhpBzfQsSoJG9F9Y4vEaygJ9Lue8nJOGEyg+npciVs4lReKrU/KAn9uhi1ubZTLInxWdex0y0+RZM5DhtpsK64I6/t0JdB2t98DxwI2JXWKoU0UvJ3yCln6uMx6A2fs5fzPvPY1f0FcspvL82f86Os2jQKRtv4Vc7U1xlUuv/iLiIV1K6dTTw+JxVokilplJYKZIfbTS6T63tSOGtpFm5ON5pzZMOa5+U2om4FhX01zWKYPYoNjQyNeNZ809gkp0QcobJAXfNDSov2GszwuaNrXGICiY85EcZ+TKIYn/WUFKlET7eeimT8iJlG4uCdH/sCXeYiNzVZdNMdgn98i6hJzct6Y1Oc2PwUGssVHMsJS/Hj6ZSRI9SKvX7vdIh+JXTQwFJR3Op536JGzMJ9HBdlb+BgWcMMF8mno+XQveR4MCSfotbnVwY+zlNePEZihZfkhnHZjTzOLJUZuhemkbeHYy7hMXuoRmS6zllGReQaT5YSms9uIRTOuiQD02ndzYMl7NcINY5KZT/zZTtAEV4WILrJIoQLXBTbunuP1H4bOkpIxDHFss3mksHYA2Q56WDqNSWnaLg/VX+DhaTXSPWK2kMFi0TPrFRFz+a5CLpnb4mSoBUc3dpL10FamfklrhQBW0SdwyFH5v44+PcVHPZFVxU6QRAsKFhr1IKHjf49ga2wXoJxusFKNXd1Jx4jkbncUVQhqdEmgZb4pnIcGG+KBmbP43Yt5Rsx/gEruCB0Qt4Wzwvd5FOomk0C+wt9LuOZM+QOfyGmPNpKcjuiPuGOARTNR7Xt1JDk6sQj0lAiUX4scAjilcxxoXp2u0xsrkScwyIawlS4QFnD+hbqKHJVR4gzh0iGDDFM7SQWp0hJEPQj7ozjI29KD78gL51Gppc6YAi11+IaGhocmmMKXSIIJ2ErG6l+VNtVDrthJi41JgbtsWYlxKPpTg9b4lOelT4DDVT/l/8W4qSjdvFrwmp+kFNLo3RBBQbj1c6isKBbugGKhjw1MY/llBIKOuJEhsXPy0TGVyMWxU/6RGVKZizhuGOR2nzca3dKZw1jH3jBcsIFw6UeDyaPm7KOeHclpYhDK4JywMczrKfEBvT/jEY/4dGk0yTS4NE6Q6lsBB2R+ndlRBoLuUr0ONWDAPbN1P5ShZUo2A+26qYhcLsANRXYtrIZ0uQC5UrmMWNaTrPxKwfHhSPh4lPLfE7qE/9lhx3sOiaPkphNnl3sXC+XBPW5EBt4bWUfmazJpdGYphiLX4mRPkxhcklKCOeJzab8lX98UmKUNRoguNVMSVtE+J8USwXav/6Yu7igHwutTJYdIyhIpdxmPKrBYPQ6+Vc0RGcQGHNJra/InZNB8l1oPrjVnkP8mE5O1QKYeo/qjO+TQ1aOlyTS2OKKBjWf/+mKGqE+ykc8phGm8/+VUKklaKo8bIjVLg8JW7jtVSftds7heCXUmEpGMZKF4rVmy+kxTWdSuG0/u+JBY0AN/cXst8ZQrrFjeq1NLZuTBWXcJkoYlyZoaSoosF45GQqLMCN6qgR1/TIayR9YqXq2Xn70gEUr4MBK7ZGYr+oThCL0hwhsdjVJY6FeOtyOe9jtVuo0UhykSQvVMy1+6pYNEdcMk/cvadj27lCwgNj1gkd9umSHLlZXMc4IYnKF/Gqou1KfQcSdcXeHyXX8HAsgTJJkh9YurvUw+VhZZfI+5maXBqNQr8o7lSxOl4sUbBOFHF32cYvkUxAJq9UIfJSiYHWFlkfJRawlNcUzTXzigio5DxB4jspvyYJYi5kA5Ex/FFR7IZjdEtHkS2RwJkh7xu2jLh2CzUQM2FO1J7iSlmijD+k/CxfKPNqcR1VUec8IEmQ60XBoxnTZ4jliGOFkG1/UW6zSOH3EQIuL3GenlgqlMh9iOWvxEXE7HaslhWf64ZpQI+wvJ/lZCqcIIrf3E5iMljb32hyaTQKayVJgHjmRnH9esTdO0BcO/T+N5RITGAfFFBjGtFXRGHPFsIhubBzkYsH4v1SlB3p9o/HYiXMScNaKy/Q5lNHDNkGsd/e4vJtJwQ9XlzVOF6X822X4/6duJK4JqxheIsQGXWt92q3UKNRyIqrhTUmz6dwOW48t3pIEgOIq35FYUaQSiQ0OosSHTdROC4Fy4XZwXOo8Ekj88SdwxSh+8VyThblx3aXCMGK3biMnGufuKojTYq8R4h1gZDpSnEXtxfrCMv2D41sWE0ujShGmSsW41QhB6wVUt+3iYtYvJwByHe3WKNiRf+6EG8PCgeOe2PuJI7z5Zhy7yrWEyn/y0u4kpGbt1DcxaQzjUHC71D45JkzxVK1yzXdLlZ6QJNLo2GYM/u0uAVLUzTdJ+5WKYB4Z1XYd1hitOsT/taSKq0MrulBkbK4ZsEPdcylodFKMJRSuhU0NLTl0tDQ5NLQ0OTSTaChocmloaHJpaGhocmloaHJpaGhyaWhoaHJpaGhyaWhocmloaER4f8FGACWhYDIThzPtAAAAABJRU5ErkJggg==" alt="Logo Grupo RFK" class="h-9 w-auto shrink-0">
                 RELATÓRIO CURVA ABC – GRUPO RFK
             </h1>
             <p class="text-[#64748b] text-sm mt-1 uppercase tracking-[0.15em] font-medium">Análise Executiva de Compras e Gestão de Insumos</p>
@@ -311,7 +310,7 @@
                     <button type="button" data-action="all">Selecionar todos</button>
                     <button type="button" data-action="none">Limpar</button>
                 </div>
-                <input type="text" id="searchOptionsInsumo" placeholder="Buscar insumo..." class="w-full mb-2 bg-[#f4f7fc] border border-[rgba(15,23,42,0.07)] text-[#0f172a] text-xs rounded-lg px-3 py-2 outline-none focus:border-accentGreen" autocomplete="off">
+                <input type="text" id="searchOptionsInsumo" placeholder="Buscar insumo..." class="w-full mb-2 bg-[#dbe4f3] border border-[rgba(15,23,42,0.07)] text-[#0f172a] text-xs rounded-lg px-3 py-2 outline-none focus:border-accentGreen" autocomplete="off">
                 <div id="optionsFilterInsumo" class="multiselect-options"></div>
             </div>
         </div>
@@ -331,7 +330,7 @@
                 <span class="text-[#94a3b8] text-xs truncate">vs. Ano Anterior <span id="kpiPeriodoLabel" class="font-medium text-[#64748b]"></span></span>
             </div>
             <div id="kpiFatPercent"></div>
-            <div class="kpi-bar" style="background: linear-gradient(90deg, #0ea5e9, transparent);"></div>
+            <div class="kpi-bar" style="background: linear-gradient(90deg, #0284c7, transparent);"></div>
         </div>
         
         <div class="card p-6 relative overflow-hidden fade-up flex flex-col justify-between min-w-0" style="animation-delay:0.1s">
@@ -342,7 +341,7 @@
                 <h2 id="kpiTicket" class="font-heading font-bold text-[#0f172a] tracking-[-0.01em] whitespace-nowrap m-0 max-w-full" style="font-size: 30px;">R$ 0,00</h2>
             </div>
             <div class="flex items-center text-sm mt-3"><span class="text-[#64748b] text-xs">Média por transação filtrada</span></div>
-            <div class="kpi-bar" style="background: linear-gradient(90deg, #2563eb, transparent);"></div>
+            <div class="kpi-bar" style="background: linear-gradient(90deg, #1d4ed8, transparent);"></div>
         </div>
         
         <div class="card p-6 relative overflow-hidden fade-up flex flex-col justify-between min-w-0" style="animation-delay:0.15s">
@@ -533,7 +532,7 @@
             return 'R$ ' + value.toFixed(0);
         };
 
-        const colorsArr = ['#2563eb', '#0ea5e9', '#f59e0b', '#8b5cf6', '#ef4444', '#0891b2', '#ca8a04', '#0284c7'];
+        const colorsArr = ['#1d4ed8', '#0284c7', '#f59e0b', '#8b5cf6', '#ef4444', '#0891b2', '#ca8a04', '#0284c7'];
         const mesesOrdenados = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
         
         Chart.defaults.color = '#64748b';
@@ -982,7 +981,7 @@
             if(isFaturamentoAtivo && totalFat > 0) {
                 const percent = ((total / totalFat) * 100).toFixed(1);
                 kpiFatEl.innerHTML = `
-                    <div class="mt-3 text-[11px] bg-[#2563eb]/15 text-accentGreen px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 font-mono font-semibold border border-[#2563eb]/30 whitespace-nowrap">
+                    <div class="mt-3 text-[11px] bg-[#1d4ed8]/15 text-accentGreen px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 font-mono font-semibold border border-[#1d4ed8]/30 whitespace-nowrap">
                         Custo é ${percent}% do Fat. (${formatShortBRL(totalFat)})
                     </div>
                 `;
@@ -1086,7 +1085,7 @@
             const rot = muitasCategorias(labels.length);
             chartInstances['chartFilial'] = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: labels, datasets: [{ label: 'Gasto Filial', data: data, backgroundColor: '#2563eb', borderRadius: 4 }] },
+                data: { labels: labels, datasets: [{ label: 'Gasto Filial', data: data, backgroundColor: '#1d4ed8', borderRadius: 4 }] },
                 options: { responsive: true, maintainAspectRatio: false, layout: { padding: paddingBarras(rot) }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ' ' + formatBRL(ctx.raw) } }, datalabels: dataLabelsBarras(rot) }, scales: { x: { ticks: { autoSkip: false, maxRotation: 40, font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { display: false }, grid: { display: false } } } }
             });
         }
@@ -1102,14 +1101,14 @@
             const isFatActive = document.getElementById('toggleFaturamento').checked;
             
             const datasets = [{ label: 'Gasto Insumos', data: dataInsumos, backgroundColor: '#f59e0b', borderRadius: 4 }];
-            if (isFatActive) { datasets.push({ label: 'Faturamento', data: dataFat, backgroundColor: '#0ea5e9', borderRadius: 4 }); }
+            if (isFatActive) { datasets.push({ label: 'Faturamento', data: dataFat, backgroundColor: '#0284c7', borderRadius: 4 }); }
 
             const percentEl = document.getElementById('percentInsumoFat');
             const totalInsumosPeriodo = dataInsumos.reduce((a, b) => a + b, 0);
             const totalFatPeriodo = dataFat.reduce((a, b) => a + b, 0);
             if (isFatActive && totalFatPeriodo > 0) {
                 const pctPeriodo = ((totalInsumosPeriodo / totalFatPeriodo) * 100).toFixed(1);
-                percentEl.innerHTML = `<div class="text-[11px] bg-[#0ea5e9]/14 text-accentBlue px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 font-mono font-semibold border border-[#0ea5e9]/30 whitespace-nowrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg> Insumos = ${pctPeriodo}% do Fat.</div>`;
+                percentEl.innerHTML = `<div class="text-[11px] bg-[#0284c7]/14 text-accentBlue px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 font-mono font-semibold border border-[#0284c7]/30 whitespace-nowrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg> Insumos = ${pctPeriodo}% do Fat.</div>`;
             } else {
                 percentEl.innerHTML = '';
             }
@@ -1141,12 +1140,12 @@
                             type: 'bar',
                             label: 'Quantidade',
                             data: dataQtd,
-                            backgroundColor: '#0ea5e9',
+                            backgroundColor: '#0284c7',
                             borderRadius: 4,
                             yAxisID: 'yQtd',
                             order: 2,
                             datalabels: dataLabelsBarras(true, {
-                                color: '#0ea5e9',
+                                color: '#0284c7',
                                 formatter: (val) => val > 0 ? formatCompacto(val) : ''
                             })
                         },
@@ -1263,9 +1262,9 @@
                 {
                     label: 'Insumo vs Faturamento',
                     data: pctFat,
-                    borderColor: '#0ea5e9', backgroundColor: 'rgba(14,165,233,0.12)',
+                    borderColor: '#0284c7', backgroundColor: 'rgba(2,132,199,0.12)',
                     fill: true, tension: 0.3, borderWidth: 2.5,
-                    pointRadius: 4, pointBackgroundColor: '#ffffff', pointBorderColor: '#0ea5e9', pointBorderWidth: 2,
+                    pointRadius: 4, pointBackgroundColor: '#ffffff', pointBorderColor: '#0284c7', pointBorderWidth: 2,
                     spanGaps: false
                 }
             ];
@@ -1333,7 +1332,7 @@
 
             // Paleta ampliada + índice contínuo: garante que CADA linha (Gasto, Fat. e S&OP,
             // de qualquer ano) receba uma cor diferente das demais, em vez de repetir a cor por ano.
-            const evoColorPalette = ['#2563eb', '#0ea5e9', '#f59e0b', '#8b5cf6', '#ef4444', '#0891b2', '#ca8a04', '#0284c7', '#db2777', '#65a30d', '#ea580c', '#0369a1', '#9333ea', '#a16207', '#059669', '#e11d48'];
+            const evoColorPalette = ['#1d4ed8', '#0284c7', '#f59e0b', '#8b5cf6', '#ef4444', '#0891b2', '#ca8a04', '#0284c7', '#db2777', '#65a30d', '#ea580c', '#0369a1', '#9333ea', '#a16207', '#059669', '#e11d48'];
             let evoColorIdx = 0;
             const proximaCorEvo = () => evoColorPalette[evoColorIdx++ % evoColorPalette.length];
 
@@ -1608,7 +1607,7 @@
                     label.innerText = 'GERANDO ' + (i + 1) + '/' + blocos.length;
 
                     const canvas = await window.html2canvas(blocos[i], {
-                        backgroundColor: '#f4f7fc',
+                        backgroundColor: '#dbe4f3',
                         scale: 2,
                         useCORS: true,
                         logging: false,

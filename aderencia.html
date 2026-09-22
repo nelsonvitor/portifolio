@@ -11,19 +11,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#f4f7fc;
-  --bg-elev:#eef3fb;
+  --bg:#dbe4f3;
+  --bg-elev:#d6e2f2;
   --card:#ffffff;
-  --card-hover:#f8fafc;
+  --card-hover:#eaf0f9;
   --border:rgba(15,23,42,0.08);
   --border-soft:rgba(15,23,42,0.04);
   --text:#0f172a;
   --text-soft:#64748b;
   --text-mute:#94a3b8;
-  --green:#2563eb;
-  --green-soft:rgba(37,99,235,0.14);
-  --blue:#0ea5e9;
-  --blue-soft:rgba(14,165,233,0.14);
+  --green:#1d4ed8;
+  --green-soft:rgba(29,78,216,0.14);
+  --blue:#0284c7;
+  --blue-soft:rgba(2,132,199,0.14);
   --orange:#f59e0b;
   --orange-soft:rgba(245,158,11,0.14);
   --purple:#8b5cf6;
@@ -59,8 +59,8 @@ body{
   position:relative;
   overflow-x:hidden;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(14,165,233,0.10), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(37,99,235,0.06), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(2,132,199,0.10), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(29,78,216,0.06), transparent);
 }
 
 .bg-orbs{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
@@ -73,7 +73,6 @@ body{
 
 .wrap{
   position:relative; z-index:1;
-  max-width:1440px;
   margin:0 auto;
   padding:40px 32px 60px;
 }
@@ -87,7 +86,7 @@ body{
   white-space:nowrap;
 }
 .nav-pill:hover{background:rgba(15,23,42,0.08); color:#0f172a;}
-.nav-pill.active{color:#ffffff; background:#2563eb; border-color:#2563eb;}
+.nav-pill.active{color:#ffffff; background:#1d4ed8; border-color:#1d4ed8;}
 .nav-pill:focus-visible{outline:2px solid var(--green); outline-offset:2px;}
 
 /* HEADER */
@@ -162,8 +161,8 @@ body{
   padding:2px 8px; border-radius:20px; font-family:var(--font-body); text-transform:none; letter-spacing:0;
 }
 #ddRow{display:contents;}
-.dd{position:relative; --c:var(--green); --c-soft:var(--green-soft); --c-b:rgba(37,99,235,0.4);}
-.dd[data-group="familia"]{--c:var(--blue); --c-soft:var(--blue-soft); --c-b:rgba(14,165,233,0.4);}
+.dd{position:relative; --c:var(--green); --c-soft:var(--green-soft); --c-b:rgba(29,78,216,0.4);}
+.dd[data-group="familia"]{--c:var(--blue); --c-soft:var(--blue-soft); --c-b:rgba(2,132,199,0.4);}
 .dd[data-group="marca"]{--c:var(--orange); --c-soft:var(--orange-soft); --c-b:rgba(245,158,11,0.4);}
 .dd[data-group="periodo"]{--c:var(--cyan); --c-soft:var(--cyan-soft); --c-b:rgba(8,145,178,0.4);}
 .dd[data-group="situ"]{--c:var(--purple); --c-soft:var(--purple-soft); --c-b:rgba(139,92,246,0.4);}
@@ -543,7 +542,7 @@ const fCompact = v => {
 const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const cmp = (a,b) => String(a).localeCompare(String(b),'pt-BR');
 
-const COLORS = {green:'#16a34a', blue:'#0ea5e9', orange:'#f59e0b', purple:'#8b5cf6', red:'#dc2626', cyan:'#0891b2', mute:'#64748b'};
+const COLORS = {green:'#16a34a', blue:'#0284c7', orange:'#f59e0b', purple:'#8b5cf6', red:'#dc2626', cyan:'#0891b2', mute:'#64748b'};
 const BAND_COLOR = {ok:COLORS.green, att:COLORS.orange, crit:COLORS.red, sem:COLORS.mute};
 const BAND_LABEL = {ok:'No verde', att:'Em atenção', crit:'Críticos', sem:'Sem necessidade'};
 const HSL = {red:[0,80,68.6], orange:[25.8,89.5,62.7], green:[163.8,66,50.4]};   // mesmas cores do modelo, em HSL
